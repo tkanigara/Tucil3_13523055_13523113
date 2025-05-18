@@ -452,21 +452,25 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Board {
-    private int rows;
-    private int cols;
-    private char[][] grid;
-    private int exitRow;
-    private int exitCol;
+    private int rows;            // Visible rows (excluding border)
+    private int cols;            // Visible columns (excluding border)
+    private char[][] grid;       // Grid with border included
+    private int exitRow;         // Exit row position
+    private int exitCol;         // Exit column position
     private ArrayList<Piece> pieces;
+    
+    // Constants for border positions
+    private static final int BORDER_SIZE = 1;
     
     public Board(int rows, int cols) {
         this.rows = rows;
         this.cols = cols;
-        this.grid = new char[rows][cols];
+        // Create grid with invisible border (add 2 rows, 2 columns)
+        this.grid = new char[rows + 2*BORDER_SIZE][cols + 2*BORDER_SIZE];
         this.pieces = new ArrayList<>();
         
         // Initialize grid with empty cells
-        for (int i = 0; i < rows; i++) {
+        for (int i = 0; i < rows + 2*BORDER_SIZE; i++) {
             Arrays.fill(grid[i], '.');
         }
         
@@ -474,17 +478,16 @@ public class Board {
         this.exitRow = -1;
         this.exitCol = -1;
     }
-    
     public Board(Board other) {
         this.rows = other.rows;
         this.cols = other.cols;
         this.exitRow = other.exitRow;
         this.exitCol = other.exitCol;
         
-        // Deep copy the grid
-        this.grid = new char[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            System.arraycopy(other.grid[i], 0, this.grid[i], 0, cols);
+        // Deep copy the grid with border
+        this.grid = new char[rows + 2*BORDER_SIZE][cols + 2*BORDER_SIZE];
+        for (int i = 0; i < rows + 2*BORDER_SIZE; i++) {
+            System.arraycopy(other.grid[i], 0, this.grid[i], 0, cols + 2*BORDER_SIZE);
         }
         
         // Deep copy the pieces
@@ -493,61 +496,98 @@ public class Board {
             this.pieces.add(new Piece(piece));
         }
     }
-    
-    public void setExit(int row, int col) {
+      public void setExit(int row, int col) {
         this.exitRow = row;
         this.exitCol = col;
         
-        // Only mark the exit on the grid if it's within the grid bounds
-        if (row >= 0 && row < rows && col >= 0 && col < cols) {
-            grid[row][col] = 'K';
+        // The physical exit position in the grid with border
+        int borderRow, borderCol;
+        
+        // Convert logical exit position to grid position with border
+        if (row == -1) { // Top exit
+            borderRow = 0;
+            borderCol = col + BORDER_SIZE;
+        } else if (row == rows) { // Bottom exit
+            borderRow = rows + BORDER_SIZE;
+            borderCol = col + BORDER_SIZE;
+        } else if (col == -1) { // Left exit
+            borderRow = row + BORDER_SIZE;
+            borderCol = 0;
+        } else if (col == cols) { // Right exit
+            borderRow = row + BORDER_SIZE;
+            borderCol = cols + BORDER_SIZE;
+        } else { // Inside the board
+            borderRow = row + BORDER_SIZE;
+            borderCol = col + BORDER_SIZE;
         }
+        
+        // Mark exit in the grid with the border
+        grid[borderRow][borderCol] = 'K';
     }
-    
-    public void addPiece(Piece piece) {
+      public void addPiece(Piece piece) {
         pieces.add(piece);
         updatePieceInGrid(piece);
-    }
-    
-    private void updatePieceInGrid(Piece piece) {
+    }private void updatePieceInGrid(Piece piece) {
         int row = piece.getRow();
         int col = piece.getCol();
         int length = piece.getLength();
         boolean isHorizontal = piece.isHorizontal();
         char symbol = piece.getSymbol();
         
+        // Adjust for border
+        int gridRow = row + BORDER_SIZE;
+        int gridCol = col + BORDER_SIZE;
+        
         for (int i = 0; i < length; i++) {
-            int r = isHorizontal ? row : row + i;
-            int c = isHorizontal ? col + i : col;
+            int r = isHorizontal ? gridRow : gridRow + i;
+            int c = isHorizontal ? gridCol + i : gridCol;
             
-            // Check if the cell is within bounds
-            if (r >= 0 && r < rows && c >= 0 && c < cols) {
+            // Check if the cell is within the actual visible board area
+            if (r >= BORDER_SIZE && r < rows + BORDER_SIZE && 
+                c >= BORDER_SIZE && c < cols + BORDER_SIZE) {
                 // Don't overwrite the exit marker
-                if (!(r == exitRow && c == exitCol)) {
+                if (grid[r][c] != 'K') {
                     grid[r][c] = symbol;
                 }
             }
         }
     }
-    
-    public void updateGrid() {
-        // Reset grid
-        for (int i = 0; i < rows; i++) {
+      public void updateGrid() {
+        // Reset grid - only reset the visible portion plus exits
+        for (int i = 0; i < rows + 2*BORDER_SIZE; i++) {
             Arrays.fill(grid[i], '.');
         }
         
-        // Mark exit if it's within grid bounds
-        if (exitRow >= 0 && exitRow < rows && exitCol >= 0 && exitCol < cols) {
-            grid[exitRow][exitCol] = 'K';
+        // Re-mark exit in the grid
+        if (exitRow != -1 || exitCol != -1) {
+            // Convert logical exit position to grid position with border
+            int borderRow, borderCol;
+            
+            if (exitRow == -1) { // Top exit
+                borderRow = 0;
+                borderCol = exitCol + BORDER_SIZE;
+            } else if (exitRow == rows) { // Bottom exit
+                borderRow = rows + BORDER_SIZE;
+                borderCol = exitCol + BORDER_SIZE;
+            } else if (exitCol == -1) { // Left exit
+                borderRow = exitRow + BORDER_SIZE;
+                borderCol = 0;
+            } else if (exitCol == cols) { // Right exit
+                borderRow = exitRow + BORDER_SIZE;
+                borderCol = cols + BORDER_SIZE;
+            } else { // Inside the board
+                borderRow = exitRow + BORDER_SIZE;
+                borderCol = exitCol + BORDER_SIZE;
+            }
+            
+            grid[borderRow][borderCol] = 'K';
         }
         
         // Place all pieces
         for (Piece piece : pieces) {
             updatePieceInGrid(piece);
         }
-    }
-    
-    public boolean movePiece(Piece piece, int direction) {
+    }    public boolean movePiece(Piece piece, int direction) {
         // direction: 1 = right/down, -1 = left/up
         int newRow = piece.getRow();
         int newCol = piece.getCol();
@@ -559,10 +599,6 @@ public class Board {
         }
         
         if (canPlacePiece(piece, newRow, newCol)) {
-            // Save the old position
-            int oldRow = piece.getRow();
-            int oldCol = piece.getCol();
-            
             // Update piece position
             piece.setRow(newRow);
             piece.setCol(newCol);
@@ -575,32 +611,51 @@ public class Board {
         
         return false;
     }
-    
-    public boolean canPlacePiece(Piece piece, int newRow, int newCol) {
+      public boolean canPlacePiece(Piece piece, int newRow, int newCol) {
         int length = piece.getLength();
         boolean isHorizontal = piece.isHorizontal();
+        boolean isPrimary = piece.isPrimary();
         
-        // Check if the new position is within bounds and cells are empty
+        // Convert logical position to grid position with border
+        int gridRow = newRow + BORDER_SIZE;
+        int gridCol = newCol + BORDER_SIZE;
+        
+        // Check if the new position is valid
         for (int i = 0; i < length; i++) {
-            int r = isHorizontal ? newRow : newRow + i;
-            int c = isHorizontal ? newCol + i : newCol;
+            int r = isHorizontal ? gridRow : gridRow + i;
+            int c = isHorizontal ? gridCol + i : gridCol;
             
-            // If a piece would be outside the board
-            if (r < 0 || r >= rows || c < 0 || c >= cols) {
-                // Special case: if it's the primary piece at the exit
-                if (piece.isPrimary() && 
-                    ((exitRow == -1 && r == 0 && c == exitCol) ||        // Top edge
-                     (exitCol == cols && r == exitRow && c == cols-1) ||  // Right edge
-                     (exitRow == rows && r == rows-1 && c == exitCol) ||  // Bottom edge
-                     (exitCol == -1 && r == exitRow && c == 0))) {        // Left edge
-                    continue;
+            // Check if the piece would be outside the valid play area
+            boolean outsideBoard = r < BORDER_SIZE || r >= rows + BORDER_SIZE || 
+                                  c < BORDER_SIZE || c >= cols + BORDER_SIZE;
+            
+            if (outsideBoard) {
+                // Special case: primary piece at an exit
+                if (isPrimary) {
+                    // Top exit
+                    if (exitRow == -1 && r == 0 && c == exitCol + BORDER_SIZE) {
+                        continue;
+                    }
+                    // Bottom exit
+                    if (exitRow == rows && r == rows + BORDER_SIZE && c == exitCol + BORDER_SIZE) {
+                        continue;
+                    }
+                    // Left exit
+                    if (exitCol == -1 && c == 0 && r == exitRow + BORDER_SIZE) {
+                        continue;
+                    }
+                    // Right exit
+                    if (exitCol == cols && c == cols + BORDER_SIZE && r == exitRow + BORDER_SIZE) {
+                        continue;
+                    }
                 }
-                return false;            }
+                return false;
+            }
             
             // Skip checking the current piece's own positions
             boolean isOwnPosition = false;
-            int origRow = piece.getRowStart();
-            int origCol = piece.getColStart();
+            int origRow = piece.getRow() + BORDER_SIZE;
+            int origCol = piece.getCol() + BORDER_SIZE;
             
             for (int j = 0; j < length; j++) {
                 int origR = isHorizontal ? origRow : origRow + j;
@@ -614,7 +669,7 @@ public class Board {
             
             if (!isOwnPosition) {
                 // Check if the cell is empty or is the exit (only for primary piece)
-                if (grid[r][c] != '.' && !(piece.isPrimary() && grid[r][c] == 'K')) {
+                if (grid[r][c] != '.' && !(isPrimary && grid[r][c] == 'K')) {
                     return false;
                 }
             }
@@ -622,8 +677,7 @@ public class Board {
         
         return true;
     }
-    
-    public boolean isSolved() {
+      public boolean isSolved() {
         // Find the primary piece
         Piece primaryPiece = null;
         for (Piece piece : pieces) {
@@ -636,8 +690,9 @@ public class Board {
         if (primaryPiece == null) {
             return false;
         }
-        int row = primaryPiece.getRowStart();
-        int col = primaryPiece.getColStart();
+        
+        int row = primaryPiece.getRow();
+        int col = primaryPiece.getCol();
         int length = primaryPiece.getLength();
         boolean isHorizontal = primaryPiece.isHorizontal();
         
@@ -664,13 +719,10 @@ public class Board {
         
         return false;
     }
-    
-    public List<Board> getNextStates() {
+      public List<Board> getNextStates() {
         List<Board> nextStates = new ArrayList<>();
         
-        for (int i = 0; i < pieces.size(); i++) {            
-            Piece piece = pieces.get(i);
-            
+        for (int i = 0; i < pieces.size(); i++) {
             // Try to move the piece in both directions
             for (int direction : new int[]{-1, 1}) {
                 Board newBoard = new Board(this);
@@ -713,14 +765,20 @@ public class Board {
         }
         return null;
     }
-    
-    /**
+      /**
      * Get the grid representation of the board
      * 
      * @return The 2D grid array representing the current state of the board
      */
     public char[][] getGrid() {
-        return grid;
+        // Return only the visible part of the grid (without border)
+        char[][] visibleGrid = new char[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                visibleGrid[i][j] = grid[i + BORDER_SIZE][j + BORDER_SIZE];
+            }
+        }
+        return visibleGrid;
     }
     
     @Override
@@ -728,7 +786,7 @@ public class Board {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                sb.append(grid[i][j]);
+                sb.append(grid[i + BORDER_SIZE][j + BORDER_SIZE]);
             }
             if (i < rows - 1) {
                 sb.append("\n");
@@ -736,8 +794,7 @@ public class Board {
         }
         return sb.toString();
     }
-    
-    @Override
+      @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
@@ -745,10 +802,10 @@ public class Board {
         Board other = (Board) obj;
         if (rows != other.rows || cols != other.cols) return false;
         
-        // Compare the grid configurations
+        // Compare only the visible grid configurations
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                if (grid[i][j] != other.grid[i][j]) {
+                if (grid[i + BORDER_SIZE][j + BORDER_SIZE] != other.grid[i + BORDER_SIZE][j + BORDER_SIZE]) {
                     return false;
                 }
             }
@@ -762,9 +819,10 @@ public class Board {
         int result = rows;
         result = 31 * result + cols;
         
+        // Hash only the visible part of the grid
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                result = 31 * result + grid[i][j];
+                result = 31 * result + grid[i + BORDER_SIZE][j + BORDER_SIZE];
             }
         }
         
