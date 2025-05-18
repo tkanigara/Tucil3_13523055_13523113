@@ -3,6 +3,7 @@ package algorithm;
 import java.util.*;
 import model.Board;
 import model.Move;
+import model.Piece;
 import util.BoardPrinter;
 
 /**
@@ -26,7 +27,7 @@ public class UCS {
         Set<String> visited = new HashSet<>();
         
         // Add initial state to queue
-        queue.add(new Node(initialBoard, null, -1, 0, 0));
+        queue.add(new Node(initialBoard, null, null, 0));
         
         // Print initial board
         BoardPrinter.printInitialBoard(initialBoard);
@@ -46,7 +47,8 @@ public class UCS {
             
             // Mark as visited
             visited.add(boardString);
-              // Check if we've reached the goal state
+            
+            // Check if we've reached the goal state
             if (current.board.isSolved()) {
                 solved = true;
                 solution = current;
@@ -65,16 +67,15 @@ public class UCS {
                     continue;
                 }
                 
-                // Find which piece was moved and how many steps
+                // Find which piece was moved and to where
                 Move move = findMove(current.board, nextBoard);
                 
                 // Add to queue with increased cost
                 queue.add(new Node(
                     nextBoard,
                     current,
-                    move.getPieceIndex(),
-                    move.getSteps(),
-                    current.cost + 1
+                    move,
+                    current.cost + 1  // Each board transition counts as 1 move
                 ));
             }
         }
@@ -106,25 +107,23 @@ public class UCS {
      */
     private Move findMove(Board from, Board to) {
         // Compare the positions of all pieces to find which one moved
-        List<model.Piece> fromPieces = from.getPieces();
-        List<model.Piece> toPieces = to.getPieces();
+        List<Piece> fromPieces = from.getPieces();
+        List<Piece> toPieces = to.getPieces();
         
         for (int i = 0; i < fromPieces.size(); i++) {
-            model.Piece fromPiece = fromPieces.get(i);
-            model.Piece toPiece = toPieces.get(i);
+            Piece fromPiece = fromPieces.get(i);
+            Piece toPiece = toPieces.get(i);
             
-            if (fromPiece.isVertical()) {
-                if (fromPiece.getRowStart() != toPiece.getRowStart()) {
-                    // Found the moved piece (vertical)
-                    int steps = toPiece.getRowStart() - fromPiece.getRowStart();
-                    return new Move(i, steps);
-                }
-            } else {
-                if (fromPiece.getColStart() != toPiece.getColStart()) {
-                    // Found the moved piece (horizontal)
-                    int steps = toPiece.getColStart() - fromPiece.getColStart();
-                    return new Move(i, steps);
-                }
+            if (fromPiece.getRow() != toPiece.getRow() || 
+                fromPiece.getCol() != toPiece.getCol()) {
+                // Found the moved piece - create a move with from and to positions
+                return new Move(
+                    i, 
+                    fromPiece.getRow(), 
+                    fromPiece.getCol(), 
+                    toPiece.getRow(), 
+                    toPiece.getCol()
+                );
             }
         }
         
@@ -153,16 +152,15 @@ public class UCS {
         // Print each step
         for (int i = 0; i < path.size(); i++) {
             Node node = path.get(i);
-            char pieceId = node.board.getPieces().get(node.movedPieceIndex).getId();
-            String direction;
+            Move move = node.move;
+            int pieceIndex = move.getPieceIndex();
+            Piece piece = node.board.getPieces().get(pieceIndex);
+            char pieceId = piece.getId();
             
-            if (node.board.getPieces().get(node.movedPieceIndex).isVertical()) {
-                direction = node.steps < 0 ? "atas" : "bawah";
-            } else {
-                direction = node.steps < 0 ? "kiri" : "kanan";
-            }
+            String direction = move.getDirection(piece.isVertical());
+            int distance = move.getDistance(piece.isVertical());
             
-            BoardPrinter.printBoardAfterMove(node.board, i + 1, pieceId, direction);
+            BoardPrinter.printBoardAfterMove(node.board, i + 1, pieceId, direction, distance);
         }
     }
     
@@ -170,17 +168,15 @@ public class UCS {
      * Inner class representing a node in the search tree.
      */
     private static class Node {
-        Board board;       // Current board state
-        Node parent;       // Parent node
-        int movedPieceIndex; // Index of the piece that was moved to reach this state
-        int steps;         // Number of steps the piece was moved
-        int cost;          // Path cost (number of moves from initial state)
+        Board board;  // Current board state
+        Node parent;  // Parent node
+        Move move;    // Move that was applied to reach this state
+        int cost;     // Path cost (number of moves from initial state)
         
-        Node(Board board, Node parent, int movedPieceIndex, int steps, int cost) {
+        Node(Board board, Node parent, Move move, int cost) {
             this.board = board;
             this.parent = parent;
-            this.movedPieceIndex = movedPieceIndex;
-            this.steps = steps;
+            this.move = move;
             this.cost = cost;
         }
     }

@@ -36,6 +36,24 @@ public class BoardPrinter {
     }
     
     /**
+     * Print the board after a move has been made, with distance information
+     * 
+     * @param board     The board state
+     * @param moveCount The move number
+     * @param pieceId   The ID of the piece that was moved
+     * @param direction The direction in which the piece was moved
+     * @param distance  The number of cells the piece was moved
+     */
+    public static void printBoardAfterMove(Board board, int moveCount, char pieceId, String direction, int distance) {
+        if (distance > 1) {
+            System.out.println("\nMove " + moveCount + ": " + pieceId + " " + direction + " " + distance + " cells");
+        } else {
+            System.out.println("\nMove " + moveCount + ": " + pieceId + " " + direction);
+        }
+        printBoardWithBorders(board, pieceId); // Highlight the moved piece
+    }
+    
+    /**
      * Print the board with borders, exit position, and color-coded pieces
      * 
      * @param board      The board to print

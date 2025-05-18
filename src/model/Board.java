@@ -1,450 +1,3 @@
-// package model;
-
-// import java.util.ArrayList;
-// import java.util.List;
-
-// /**
-//  * Represents the game board for the Rush Hour puzzle.
-//  */
-// public class Board {
-//     private int rows;          // Number of rows in the board
-//     private int cols;          // Number of columns in the board
-//     private List<Piece> pieces; // List of pieces on the board
-//     private Piece primaryPiece; // Reference to the primary piece
-//     private int exitRow;       // Row coordinate of the exit
-//     private int exitCol;       // Column coordinate of the exit
-//     private char[][] grid;     // Grid representation of the board
-//       /**
-//      * Create a new board with the specified dimensions
-//      * 
-//      * @param rows Number of rows
-//      * @param cols Number of columns
-//      */
-//     public Board(int rows, int cols) {
-//         this.rows = rows;
-//         this.cols = cols;
-//         this.pieces = new ArrayList<>();
-//         this.grid = new char[rows][cols];
-        
-//         // Initialize with default exit position
-//         this.exitRow = 0;
-//         this.exitCol = 0;
-        
-//         // Initialize grid with empty cells
-//         for (int i = 0; i < rows; i++) {
-//             for (int j = 0; j < cols; j++) {
-//                 grid[i][j] = '.';
-//             }
-//         }
-//     }
-    
-//     /**
-//      * Create a deep copy of an existing board
-//      * 
-//      * @param other The board to copy
-//      */
-//     public Board(Board other) {
-//         this.rows = other.rows;
-//         this.cols = other.cols;
-//         this.exitRow = other.exitRow;
-//         this.exitCol = other.exitCol;
-        
-//         // Deep copy of pieces
-//         this.pieces = new ArrayList<>();
-//         for (Piece piece : other.pieces) {
-//             Piece newPiece = new Piece(piece);
-//             this.pieces.add(newPiece);
-//             if (piece.isPrimary()) {
-//                 this.primaryPiece = newPiece;
-//             }
-//         }
-        
-//         // Regenerate grid
-//         this.grid = new char[rows][cols];
-//         updateGrid();
-//     }
-    
-//     /**
-//      * Add a piece to the board
-//      * 
-//      * @param piece The piece to add
-//      */
-//     public void addPiece(Piece piece) {
-//         pieces.add(piece);
-//         if (piece.isPrimary()) {
-//             primaryPiece = piece;
-//         }
-        
-//         // Update grid with the new piece
-//         updatePieceInGrid(piece);
-//     }
-//       /**
-//      * Set the exit location
-//      * 
-//      * @param row Exit row
-//      * @param col Exit column
-//      */
-//     public void setExit(int row, int col) {
-//         this.exitRow = row;
-//         this.exitCol = col;
-        
-//         // Only mark exit in grid if it's within board bounds
-//         if (row >= 0 && row < rows && col >= 0 && col < cols) {
-//             grid[row][col] = 'K'; // Mark exit in grid
-//         }
-//     }
-//       /**
-//      * Update the grid representation of the board
-//      */
-//     private void updateGrid() {
-//         // Reset grid
-//         for (int i = 0; i < rows; i++) {
-//             for (int j = 0; j < cols; j++) {
-//                 grid[i][j] = '.';
-//             }
-//         }
-        
-//         // Mark exit only if it's within bounds
-//         if (exitRow >= 0 && exitRow < rows && exitCol >= 0 && exitCol < cols) {
-//             grid[exitRow][exitCol] = 'K';
-//         }
-        
-//         // Add pieces to grid
-//         for (Piece piece : pieces) {
-//             updatePieceInGrid(piece);
-//         }
-//     }
-//       /**
-//      * Update a specific piece in the grid
-//      * 
-//      * @param piece The piece to update in the grid
-//      */
-//     private void updatePieceInGrid(Piece piece) {
-//         char id = piece.getId();
-//         if (piece.isVertical()) {
-//             for (int r = piece.getRowStart(); r < piece.getRowStart() + piece.getLength(); r++) {
-//                 if (r >= 0 && r < rows && piece.getColStart() >= 0 && piece.getColStart() < cols) {
-//                     // Don't overwrite the exit marker
-//                     if (grid[r][piece.getColStart()] != 'K') {
-//                         grid[r][piece.getColStart()] = id;
-//                     }
-//                 }
-//             }
-//         } else {
-//             for (int c = piece.getColStart(); c < piece.getColStart() + piece.getLength(); c++) {
-//                 if (piece.getRowStart() >= 0 && piece.getRowStart() < rows && c >= 0 && c < cols) {
-//                     // Don't overwrite the exit marker
-//                     if (grid[piece.getRowStart()][c] != 'K') {
-//                         grid[piece.getRowStart()][c] = id;
-//                     }
-//                 }
-//             }
-//         }
-//     }
-    
-//     /**
-//      * Check if a move is valid for a specific piece
-//      * 
-//      * @param pieceIndex Index of the piece to move
-//      * @param steps      Number of steps to move
-//      * @return True if the move is valid, false otherwise
-//      */
-//     public boolean isValidMove(int pieceIndex, int steps) {
-//         if (pieceIndex < 0 || pieceIndex >= pieces.size() || steps == 0) {
-//             return false;
-//         }
-        
-//         Piece piece = pieces.get(pieceIndex);
-//         boolean isVertical = piece.isVertical();
-        
-//         // Check boundaries and collisions
-//         if (isVertical) {
-//             // Moving up (negative steps)
-//             if (steps < 0) {
-//                 int newStart = piece.getRowStart() + steps;
-//                 if (newStart < 0) {
-//                     return false; // Out of bounds
-//                 }
-                
-//                 // Check for collisions
-//                 for (int r = newStart; r < piece.getRowStart(); r++) {
-//                     if (grid[r][piece.getColStart()] != '.') {
-//                         return false; // Collision with another piece
-//                     }
-//                 }
-//             } 
-//             // Moving down (positive steps)
-//             else {
-//                 int newEnd = piece.getEnd() + steps;
-//                 if (newEnd >= rows) {
-//                     return false; // Out of bounds
-//                 }
-                
-//                 // Check for collisions
-//                 for (int r = piece.getEnd() + 1; r <= newEnd; r++) {
-//                     if (grid[r][piece.getColStart()] != '.' && grid[r][piece.getColStart()] != 'K') {
-//                         return false; // Collision with another piece
-//                     }
-                    
-//                     // Only primary piece can move to exit
-//                     if (grid[r][piece.getColStart()] == 'K' && !piece.isPrimary()) {
-//                         return false;
-//                     }
-//                 }
-//             }
-//         } else {
-//             // Moving left (negative steps)
-//             if (steps < 0) {
-//                 int newStart = piece.getColStart() + steps;
-//                 if (newStart < 0) {
-//                     return false; // Out of bounds
-//                 }
-                
-//                 // Check for collisions
-//                 for (int c = newStart; c < piece.getColStart(); c++) {
-//                     if (grid[piece.getRowStart()][c] != '.') {
-//                         return false; // Collision with another piece
-//                     }
-//                 }
-//             } 
-//             // Moving right (positive steps)
-//             else {
-//                 int newEnd = piece.getEnd() + steps;
-//                 if (newEnd >= cols) {
-//                     return false; // Out of bounds
-//                 }
-                
-//                 // Check for collisions
-//                 for (int c = piece.getEnd() + 1; c <= newEnd; c++) {
-//                     if (grid[piece.getRowStart()][c] != '.' && grid[piece.getRowStart()][c] != 'K') {
-//                         return false; // Collision with another piece
-//                     }
-                    
-//                     // Only primary piece can move to exit
-//                     if (grid[piece.getRowStart()][c] == 'K' && !piece.isPrimary()) {
-//                         return false;
-//                     }
-//                 }
-//             }
-//         }
-        
-//         return true;
-//     }
-    
-//     /**
-//      * Apply a move to a specific piece
-//      * 
-//      * @param pieceIndex Index of the piece to move
-//      * @param steps      Number of steps to move
-//      * @return A new board with the move applied
-//      */
-//     public Board applyMove(int pieceIndex, int steps) {
-//         if (!isValidMove(pieceIndex, steps)) {
-//             return null;
-//         }
-        
-//         Board newBoard = new Board(this);
-//         newBoard.pieces.get(pieceIndex).move(steps);
-//         newBoard.updateGrid();
-        
-//         return newBoard;
-//     }    /**
-//      * Check if the puzzle is solved (primary piece reaches the exit)
-//      * 
-//      * @return True if solved, false otherwise
-//      */
-//     public boolean isSolved() {
-//         if (primaryPiece == null) {
-//             return false;
-//         }
-        
-//         // Handle case when exit is outside the board (at the right edge)
-//         if (exitCol == cols) {
-//             // Horizontal primary piece reaches the right edge
-//             return !primaryPiece.isVertical() && 
-//                    primaryPiece.getRowStart() == exitRow && 
-//                    primaryPiece.getEnd() == cols - 1;
-//         }
-        
-//         // Handle case when exit is outside the board (at the bottom edge)
-//         if (exitRow == rows) {
-//             // Vertical primary piece reaches the bottom edge
-//             return primaryPiece.isVertical() && 
-//                    primaryPiece.getColStart() == exitCol && 
-//                    primaryPiece.getEnd() == rows - 1;
-//         }
-        
-//         // For other cases (exit is on the edges of the board)
-//         if (!primaryPiece.isVertical()) {
-//             // If exit is on the right edge and primary piece extends to the right edge
-//             if (exitCol == cols - 1 && primaryPiece.getEnd() == cols - 1) {
-//                 return primaryPiece.getRowStart() == exitRow;
-//             }
-            
-//             // If exit is on the left edge and primary piece extends to the left edge
-//             if (exitCol == 0 && primaryPiece.getColStart() == 0) {
-//                 return primaryPiece.getRowStart() == exitRow;
-//             }
-//         }
-        
-//         // For a vertical primary piece
-//         if (primaryPiece.isVertical()) {
-//             // If exit is on the bottom edge and primary piece extends to the bottom edge
-//             if (exitRow == rows - 1 && primaryPiece.getEnd() == rows - 1) {
-//                 return primaryPiece.getColStart() == exitCol;
-//             }
-            
-//             // If exit is on the top edge and primary piece extends to the top edge
-//             if (exitRow == 0 && primaryPiece.getRowStart() == 0) {
-//                 return primaryPiece.getColStart() == exitCol;
-//             }
-//         }
-        
-//         return false;
-//     }
-    
-//     /**
-//      * Generate all possible next states from the current board
-//      * 
-//      * @return A list of possible next states
-//      */
-//     public List<Board> generateNextStates() {
-//         List<Board> nextStates = new ArrayList<>();
-        
-//         for (int i = 0; i < pieces.size(); i++) {
-//             Piece piece = pieces.get(i);
-            
-//             // Try moving in both directions
-//             if (piece.isVertical()) {
-//                 // Try moving up (negative steps)
-//                 for (int steps = -1; isValidMove(i, steps); steps--) {
-//                     nextStates.add(applyMove(i, steps));
-//                 }
-                
-//                 // Try moving down (positive steps)
-//                 for (int steps = 1; isValidMove(i, steps); steps++) {
-//                     nextStates.add(applyMove(i, steps));
-//                 }
-//             } else {
-//                 // Try moving left (negative steps)
-//                 for (int steps = -1; isValidMove(i, steps); steps--) {
-//                     nextStates.add(applyMove(i, steps));
-//                 }
-                
-//                 // Try moving right (positive steps)
-//                 for (int steps = 1; isValidMove(i, steps); steps++) {
-//                     nextStates.add(applyMove(i, steps));
-//                 }
-//             }
-//         }
-        
-//         return nextStates;
-//     }
-    
-//     /**
-//      * Get the string representation of the move (for output)
-//      * 
-//      * @param pieceIndex Index of the piece being moved
-//      * @param steps      Number of steps the piece is moved
-//      * @return String describing the move
-//      */
-//     public String getMoveDescription(int pieceIndex, int steps) {
-//         Piece piece = pieces.get(pieceIndex);
-//         char id = piece.getId();
-//         String direction;
-        
-//         if (piece.isVertical()) {
-//             direction = steps < 0 ? "atas" : "bawah";
-//         } else {
-//             direction = steps < 0 ? "kiri" : "kanan";
-//         }
-        
-//         return id + "-" + direction;
-//     }
-    
-//     /**
-//      * Generate a hash code for the board (used in the search algorithms)
-//      */
-//     @Override
-//     public int hashCode() {
-//         return toString().hashCode();
-//     }
-    
-//     /**
-//      * Check if two boards are equal
-//      */
-//     @Override
-//     public boolean equals(Object obj) {
-//         if (this == obj) return true;
-//         if (obj == null || getClass() != obj.getClass()) return false;
-        
-//         Board other = (Board) obj;
-//         return toString().equals(other.toString());
-//     }
-    
-//     /**
-//      * Get string representation of the board
-//      */
-//     @Override
-//     public String toString() {
-//         StringBuilder sb = new StringBuilder();
-//         for (int i = 0; i < rows; i++) {
-//             for (int j = 0; j < cols; j++) {
-//                 sb.append(grid[i][j]);
-//             }
-//             if (i < rows - 1) {
-//                 sb.append("\n");
-//             }
-//         }
-//         return sb.toString();
-//     }
-    
-//     // Getters
-    
-//     public int getRows() {
-//         return rows;
-//     }
-    
-//     public int getCols() {
-//         return cols;
-//     }
-    
-//     public List<Piece> getPieces() {
-//         return pieces;
-//     }
-    
-//     public Piece getPrimaryPiece() {
-//         return primaryPiece;
-//     }
-    
-//     public int getExitRow() {
-//         return exitRow;
-//     }
-    
-//     public int getExitCol() {
-//         return exitCol;
-//     }
-    
-//     public char[][] getGrid() {
-//         return grid;
-//     }
-    
-//     /**
-//      * Find a piece by its ID
-//      * 
-//      * @param id ID of the piece to find
-//      * @return Index of the piece, or -1 if not found
-//      */
-//     public int findPieceIndexById(char id) {
-//         for (int i = 0; i < pieces.size(); i++) {
-//             if (pieces.get(i).getId() == id) {
-//                 return i;
-//             }
-//         }
-//         return -1;
-//     }
-// }
-
 package model;
 
 import java.util.ArrayList;
@@ -478,6 +31,7 @@ public class Board {
         this.exitRow = -1;
         this.exitCol = -1;
     }
+    
     public Board(Board other) {
         this.rows = other.rows;
         this.cols = other.cols;
@@ -496,7 +50,8 @@ public class Board {
             this.pieces.add(new Piece(piece));
         }
     }
-      public void setExit(int row, int col) {
+    
+    public void setExit(int row, int col) {
         this.exitRow = row;
         this.exitCol = col;
         
@@ -524,10 +79,13 @@ public class Board {
         // Mark exit in the grid with the border
         grid[borderRow][borderCol] = 'K';
     }
-      public void addPiece(Piece piece) {
+    
+    public void addPiece(Piece piece) {
         pieces.add(piece);
         updatePieceInGrid(piece);
-    }private void updatePieceInGrid(Piece piece) {
+    }
+    
+    private void updatePieceInGrid(Piece piece) {
         int row = piece.getRow();
         int col = piece.getCol();
         int length = piece.getLength();
@@ -552,7 +110,8 @@ public class Board {
             }
         }
     }
-      public void updateGrid() {
+    
+    public void updateGrid() {
         // Reset grid - only reset the visible portion plus exits
         for (int i = 0; i < rows + 2*BORDER_SIZE; i++) {
             Arrays.fill(grid[i], '.');
@@ -587,7 +146,26 @@ public class Board {
         for (Piece piece : pieces) {
             updatePieceInGrid(piece);
         }
-    }    public boolean movePiece(Piece piece, int direction) {
+    }
+    
+    // Method to move a piece to a specific position (regardless of distance)
+    public boolean movePieceTo(Piece piece, int targetRow, int targetCol) {
+        if (canPlacePiece(piece, targetRow, targetCol)) {
+            // Update piece position
+            piece.setRow(targetRow);
+            piece.setCol(targetCol);
+            
+            // Update the grid
+            updateGrid();
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // The original method is kept for compatibility
+    public boolean movePiece(Piece piece, int direction) {
         // direction: 1 = right/down, -1 = left/up
         int newRow = piece.getRow();
         int newCol = piece.getCol();
@@ -598,20 +176,10 @@ public class Board {
             newRow += direction;
         }
         
-        if (canPlacePiece(piece, newRow, newCol)) {
-            // Update piece position
-            piece.setRow(newRow);
-            piece.setCol(newCol);
-            
-            // Update the grid
-            updateGrid();
-            
-            return true;
-        }
-        
-        return false;
+        return movePieceTo(piece, newRow, newCol);
     }
-      public boolean canPlacePiece(Piece piece, int newRow, int newCol) {
+    
+    public boolean canPlacePiece(Piece piece, int newRow, int newCol) {
         int length = piece.getLength();
         boolean isHorizontal = piece.isHorizontal();
         boolean isPrimary = piece.isPrimary();
@@ -677,7 +245,54 @@ public class Board {
         
         return true;
     }
-      public boolean isSolved() {
+    
+    // Method to check if there's a clear path for sliding
+    private boolean isClearPath(Piece piece, int targetRow, int targetCol) {
+        int currentRow = piece.getRow();
+        int currentCol = piece.getCol();
+        boolean isHorizontal = piece.isHorizontal();
+        
+        // For horizontal pieces, check if all cells between current and target are empty
+        if (isHorizontal) {
+            int minCol = Math.min(currentCol, targetCol);
+            int maxCol = Math.max(currentCol, targetCol);
+            
+            // Check all cells in between (excluding start position)
+            for (int c = minCol + 1; c <= maxCol; c++) {
+                if (c == currentCol) continue; // Skip the current position
+                
+                // Create a temporary board state to check this position
+                Board tempBoard = new Board(this);
+                Piece tempPiece = tempBoard.getPieces().get(pieces.indexOf(piece));
+                
+                if (!tempBoard.movePieceTo(tempPiece, currentRow, c)) {
+                    return false;
+                }
+            }
+        } 
+        // For vertical pieces, check if all cells between current and target are empty
+        else {
+            int minRow = Math.min(currentRow, targetRow);
+            int maxRow = Math.max(currentRow, targetRow);
+            
+            // Check all cells in between (excluding start position)
+            for (int r = minRow + 1; r <= maxRow; r++) {
+                if (r == currentRow) continue; // Skip the current position
+                
+                // Create a temporary board state to check this position
+                Board tempBoard = new Board(this);
+                Piece tempPiece = tempBoard.getPieces().get(pieces.indexOf(piece));
+                
+                if (!tempBoard.movePieceTo(tempPiece, r, currentCol)) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    public boolean isSolved() {
         // Find the primary piece
         Piece primaryPiece = null;
         for (Piece piece : pieces) {
@@ -719,17 +334,49 @@ public class Board {
         
         return false;
     }
-      public List<Board> getNextStates() {
+    
+    // New method to get all possible states with sliding moves
+    public List<Board> getNextStates() {
         List<Board> nextStates = new ArrayList<>();
         
         for (int i = 0; i < pieces.size(); i++) {
-            // Try to move the piece in both directions
-            for (int direction : new int[]{-1, 1}) {
-                Board newBoard = new Board(this);
-                Piece newPiece = newBoard.getPieces().get(i);
-                
-                if (newBoard.movePiece(newPiece, direction)) {
-                    nextStates.add(newBoard);
+            Piece piece = pieces.get(i);
+            boolean isHorizontal = piece.isHorizontal();
+            int currentRow = piece.getRow();
+            int currentCol = piece.getCol();
+            
+            // Find all possible positions for this piece
+            if (isHorizontal) {
+                // Try all possible horizontal positions
+                for (int newCol = 0; newCol <= cols - piece.getLength(); newCol++) {
+                    // Skip current position
+                    if (newCol == currentCol) continue;
+                    
+                    // Check if we can move to this position directly (slide)
+                    if (isClearPath(piece, currentRow, newCol)) {
+                        Board newBoard = new Board(this);
+                        Piece newPiece = newBoard.getPieces().get(i);
+                        
+                        if (newBoard.movePieceTo(newPiece, currentRow, newCol)) {
+                            nextStates.add(newBoard);
+                        }
+                    }
+                }
+            } else {
+                // Try all possible vertical positions
+                for (int newRow = 0; newRow <= rows - piece.getLength(); newRow++) {
+                    // Skip current position
+                    if (newRow == currentRow) continue;
+                    
+                    // Check if we can move to this position directly (slide)
+                    if (isClearPath(piece, newRow, currentCol)) {
+                        Board newBoard = new Board(this);
+                        Piece newPiece = newBoard.getPieces().get(i);
+                        
+                        if (newBoard.movePieceTo(newPiece, newRow, currentCol)) {
+                            nextStates.add(newBoard);
+                        }
+                    }
                 }
             }
         }
@@ -765,11 +412,7 @@ public class Board {
         }
         return null;
     }
-      /**
-     * Get the grid representation of the board
-     * 
-     * @return The 2D grid array representing the current state of the board
-     */
+    
     public char[][] getGrid() {
         // Return only the visible part of the grid (without border)
         char[][] visibleGrid = new char[rows][cols];
@@ -794,7 +437,8 @@ public class Board {
         }
         return sb.toString();
     }
-      @Override
+    
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
