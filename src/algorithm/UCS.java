@@ -11,6 +11,11 @@ import util.BoardPrinter;
  */
 public class UCS {
     private int nodesVisited = 0;
+    private gui.Gui.SolutionCollector collector;
+
+    public UCS(gui.Gui.SolutionCollector collector){
+        this.collector = collector;
+    }
     
     /**
      * Solve the Rush Hour puzzle using Uniform Cost Search.
@@ -96,6 +101,26 @@ public class UCS {
             System.out.println("Jumlah node yang diperiksa: " + nodesVisited);
             System.out.println("Waktu eksekusi: " + executionTime + " detik");
         }
+
+        if (solved && collector != null) {
+            // Collect the solution steps
+            List<Node> path = new ArrayList<>();
+            Node current = solution;
+            
+            // Collect from goal to start
+            while (current != null) {
+                path.add(current);
+                current = current.parent;
+            }
+            
+            // Reverse to get from start to goal
+            Collections.reverse(path);
+            
+            // Add each board state to the collector
+            for (Node node : path) {
+                collector.addStep(node.board);
+            }
+        }
     }
     
     /**
@@ -179,5 +204,9 @@ public class UCS {
             this.move = move;
             this.cost = cost;
         }
+    }
+
+    public int getNodesVisited(){
+        return this.nodesVisited;
     }
 }

@@ -14,6 +14,7 @@ public class IDAStar {
     private int nodesVisited = 0;
     private int heuristicType;
     private List<Node> solutionPath;
+    private gui.Gui.SolutionCollector collector;
     
     // Heuristic types - same as GBFS and A* for consistency
     public static final int BLOCKING_PIECES = 1;
@@ -25,15 +26,16 @@ public class IDAStar {
      * 
      * @param heuristicType The type of heuristic to use
      */
-    public IDAStar(int heuristicType) {
+    public IDAStar(int heuristicType, gui.Gui.SolutionCollector collector) {
         this.heuristicType = heuristicType;
+        this.collector = collector;
     }
     
     /**
      * Default constructor - uses blocking pieces heuristic
      */
     public IDAStar() {
-        this(BLOCKING_PIECES);
+        this(BLOCKING_PIECES, null);
     }
     
     /**
@@ -98,6 +100,16 @@ public class IDAStar {
         long endTime = System.currentTimeMillis();
         double executionTime = (endTime - startTime) / 1000.0;
         
+        if (solved && collector != null) {
+            // Add initial board
+            collector.addStep(initialBoard);
+            
+            // Add each board state in the solution path
+            for (Node node : solutionPath) {
+                collector.addStep(node.board);
+            }
+        }
+
         if (solved) {
             // Print the solution path
             Collections.reverse(solutionPath);
@@ -326,7 +338,7 @@ public class IDAStar {
         int blockingPieces = calculateBlockingPiecesHeuristic(board);
         int manhattanDistance = calculateManhattanHeuristic(board);
         
-        return blockingPieces * 2 + manhattanDistance;
+        return blockingPieces + manhattanDistance;
     }
     
     /**
@@ -406,5 +418,9 @@ public class IDAStar {
             this.cost = cost;
             this.nextThreshold = nextThreshold;
         }
+    }
+
+    public int getNodesVisited(){
+        return this.nodesVisited;
     }
 }

@@ -13,6 +13,7 @@ import util.BoardPrinter;
 public class AStar {
     private int nodesVisited = 0;
     private int heuristicType;
+    private gui.Gui.SolutionCollector collector;
     
     // Heuristic types - same as GBFS for consistency
     public static final int BLOCKING_PIECES = 1;
@@ -24,15 +25,16 @@ public class AStar {
      * 
      * @param heuristicType The type of heuristic to use
      */
-    public AStar(int heuristicType) {
+    public AStar(int heuristicType, gui.Gui.SolutionCollector collector) {
         this.heuristicType = heuristicType;
+        this.collector = collector;
     }
     
     /**
      * Default constructor - uses blocking pieces heuristic
      */
     public AStar() {
-        this(BLOCKING_PIECES);
+        this(BLOCKING_PIECES, null);
     }
     
     /**
@@ -116,6 +118,29 @@ public class AStar {
         long endTime = System.currentTimeMillis();
         double executionTime = (endTime - startTime) / 1000.0;
         
+        if (solved && collector != null) {
+            // Collect the solution steps
+            List<Node> path = new ArrayList<>();
+            Node current = solution;
+            
+            // Also add initial board
+            collector.addStep(initialBoard);
+            
+            // Collect from goal to start
+            while (current != null) {
+                path.add(current);
+                current = current.parent;
+            }
+            
+            // Reverse to get from start to goal
+            Collections.reverse(path);
+            
+            // Add each board state to the collector (skipping the first one)
+            for (int i = 1; i < path.size(); i++) {
+                collector.addStep(path.get(i).board);
+            }
+        }
+
         if (solved) {
             // Reconstruct and print the solution path
             printSolution(solution);
@@ -353,5 +378,9 @@ public class AStar {
             this.cost = cost;
             this.heuristic = heuristic;
         }
+    }
+
+    public int getNodesVisited(){
+        return this.nodesVisited;
     }
 }

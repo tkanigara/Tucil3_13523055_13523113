@@ -1,10 +1,18 @@
 import algorithm.*;
+import gui.Gui;
 import java.util.Scanner;
 import model.Board;
 import util.FileParser;
 
 public class Main {
     public static void main(String[] args) {
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("--gui")) {
+            // Launch GUI
+            javax.swing.SwingUtilities.invokeLater(() -> new Gui());
+            return;
+        }
+
         Scanner scanner = new Scanner(System.in);
         
         System.out.println("Rush Hour Puzzle Solver");
@@ -49,27 +57,27 @@ public class Main {
             switch (choice) {
                 case 1:
                     System.out.println("\nSolving with Uniform Cost Search (UCS)...");
-                    UCS ucs = new UCS();
+                    UCS ucs = new UCS(null);
                     ucs.solve(initialBoard);
                     break;
                 case 2:
                     System.out.println("\nSolving with Greedy Best-First Search (GBFS)...");
-                    GBFS gbfs = new GBFS(heuristicChoice);
+                    GBFS gbfs = new GBFS(heuristicChoice,null);
                     gbfs.solve(initialBoard);
                     break;
                 case 3:
                     System.out.println("\nSolving with A* Search...");
-                    AStar aStar = new AStar(heuristicChoice);
+                    AStar aStar = new AStar(heuristicChoice, null);
                     aStar.solve(initialBoard);
                     break;
                 case 4:
                     System.out.println("Solving with Iterative Deepening A* (IDA*) Search...");
-                    IDAStar idaStar = new IDAStar(heuristicChoice);
+                    IDAStar idaStar = new IDAStar(heuristicChoice, null);
                     idaStar.solve(initialBoard);
                     break;
                 default:
                     System.out.println("Invalid choice. Using UCS by default.");
-                    UCS defaultUcs = new UCS();
+                    UCS defaultUcs = new UCS(null);
                     defaultUcs.solve(initialBoard);
             }
             

@@ -13,6 +13,7 @@ import util.BoardPrinter;
 public class GBFS {
     private int nodesVisited = 0;
     private int heuristicType;
+    private gui.Gui.SolutionCollector collector;
     
     // Heuristic types
     public static final int BLOCKING_PIECES = 1;
@@ -24,15 +25,16 @@ public class GBFS {
      * 
      * @param heuristicType The type of heuristic to use
      */
-    public GBFS(int heuristicType) {
+    public GBFS(int heuristicType, gui.Gui.SolutionCollector collector) {
         this.heuristicType = heuristicType;
+        this.collector = collector;
     }
     
     /**
      * Default constructor - uses blocking pieces heuristic
      */
     public GBFS() {
-        this(BLOCKING_PIECES);
+        this(BLOCKING_PIECES,null);
     }
     
     /**
@@ -114,6 +116,26 @@ public class GBFS {
         long endTime = System.currentTimeMillis();
         double executionTime = (endTime - startTime) / 1000.0;
         
+        if (solved && collector != null) {
+            // Collect the solution steps
+            List<Node> path = new ArrayList<>();
+            Node current = solution;
+            
+            // Collect from goal to start
+            while (current != null) {
+                path.add(current);
+                current = current.parent;
+            }
+            
+            // Reverse to get from start to goal
+            Collections.reverse(path);
+            
+            // Add each board state to the collector
+            for (Node node : path) {
+                collector.addStep(node.board);
+            }
+        }
+
         if (solved) {
             // Reconstruct and print the solution path
             printSolution(solution);
@@ -448,5 +470,9 @@ public class GBFS {
             this.cost = cost;
             this.heuristic = heuristic;
         }
+    }
+
+    public int getNodesVisited(){
+        return this.nodesVisited;
     }
 }
