@@ -2,6 +2,7 @@ import algorithm.*;
 import java.util.Scanner;
 import model.Board;
 import util.FileParser;
+import util.SolutionWriter;
 
 public class Main {
     public static void main(String[] args) {
@@ -12,12 +13,23 @@ public class Main {
         
         // Get the input file path
         System.out.print("Enter the path to the input file: ");
-        String filePath = scanner.nextLine();
+        String filePath = "test/input/" + scanner.nextLine() + ".txt";
+        
+        // Get the output file path
+        System.out.print("Enter the name for the output file (without .txt): ");
+        String outputFileName = scanner.nextLine();
+        if (outputFileName.isEmpty()) {
+            outputFileName = "solution";
+        }
+        String outputFilePath = "test/output/" + outputFileName + ".txt";
         
         try {
             // Parse the input file
             FileParser parser = new FileParser();
             Board initialBoard = parser.parseFile(filePath);
+            
+            // Prepare solution writer
+            SolutionWriter solutionWriter = new SolutionWriter(outputFilePath);
             
             // Choose the algorithm
             System.out.println("\nChoose the algorithm:");
@@ -50,28 +62,30 @@ public class Main {
                 case 1:
                     System.out.println("\nSolving with Uniform Cost Search (UCS)...");
                     UCS ucs = new UCS();
-                    ucs.solve(initialBoard);
+                    ucs.solve(initialBoard, solutionWriter);
                     break;
                 case 2:
                     System.out.println("\nSolving with Greedy Best-First Search (GBFS)...");
                     GBFS gbfs = new GBFS(heuristicChoice);
-                    gbfs.solve(initialBoard);
+                    gbfs.solve(initialBoard, solutionWriter);
                     break;
                 case 3:
                     System.out.println("\nSolving with A* Search...");
                     AStar aStar = new AStar(heuristicChoice);
-                    aStar.solve(initialBoard);
+                    aStar.solve(initialBoard, solutionWriter);
                     break;
                 case 4:
                     System.out.println("Solving with Iterative Deepening A* (IDA*) Search...");
                     IDAStar idaStar = new IDAStar(heuristicChoice);
-                    idaStar.solve(initialBoard);
+                    idaStar.solve(initialBoard, solutionWriter);
                     break;
                 default:
                     System.out.println("Invalid choice. Using UCS by default.");
                     UCS defaultUcs = new UCS();
-                    defaultUcs.solve(initialBoard);
+                    defaultUcs.solve(initialBoard, solutionWriter);
             }
+            
+            System.out.println("\nSolution saved to: " + outputFilePath);
             
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());

@@ -1,0 +1,50 @@
+Initial Board:
++-------+
+|AAB....|
+|..BD...|
+K.C.DPP.|
+|.C.III.|
+|..J....|
+|LLJMM..|
++-------+
+
+
+
+Move 1: D atas
++-------+
+|AABD...|
+|..BD...|
+K.C..PP.|
+|.C.III.|
+|..J....|
+|LLJMM..|
++-------+
+
+
+
+Move 2: C bawah
++-------+
+|AABD...|
+|..BD...|
+K....PP.|
+|.C.III.|
+|.CJ....|
+|LLJMM..|
++-------+
+
+
+
+Move 3: P kiri 4 cells
++-------+
+|AABD...|
+|..BD...|
+KPP.....|
+|.C.III.|
+|.CJ....|
+|LLJMM..|
++-------+
+
+
+Jumlah langkah: 3
+Jumlah node yang diperiksa: 71
+Waktu eksekusi: 0.018 detik

@@ -4,7 +4,7 @@ import java.util.*;
 import model.Board;
 import model.Move;
 import model.Piece;
-import util.BoardPrinter;
+import util.SolutionWriter;
 
 /**
  * Uniform Cost Search (UCS) algorithm implementation for solving Rush Hour puzzles.
@@ -17,20 +17,30 @@ public class UCS {
      * 
      * @param initialBoard The initial board state
      */
-    public void solve(Board initialBoard) {
+    // Modifikasi method solve
+    /**
+     * Solve the Rush Hour puzzle using Uniform Cost Search.
+     * 
+     * @param initialBoard The initial board state
+     * @param solutionWriter Writer for capturing the solution
+     */
+    public void solve(Board initialBoard, SolutionWriter solutionWriter) {
         long startTime = System.currentTimeMillis();
+        int nodesVisited = 0;
         
-        // Priority queue ordered by path cost (number of moves)
-        PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingInt(node -> node.cost));
+        // Create the priority queue ordered by path cost
+        PriorityQueue<Node> queue = new PriorityQueue<>(
+            Comparator.comparingInt(node -> node.cost)
+        );
         
-        // To keep track of visited states
+        // Keep track of visited states
         Set<String> visited = new HashSet<>();
         
-        // Add initial state to queue
+        // Start with the initial state
         queue.add(new Node(initialBoard, null, null, 0));
         
-        // Print initial board
-        BoardPrinter.printInitialBoard(initialBoard);
+        // Display initial board
+        solutionWriter.writeInitialBoard(initialBoard);
         
         boolean solved = false;
         Node solution = null;
@@ -59,9 +69,7 @@ public class UCS {
             List<Board> nextStates = current.board.getNextStates();
             
             // Add each next state to the queue
-            for (int i = 0; i < nextStates.size(); i++) {
-                Board nextBoard = nextStates.get(i);
-                
+            for (Board nextBoard : nextStates) {
                 // Skip if we've already visited this state
                 if (visited.contains(nextBoard.toString())) {
                     continue;
@@ -85,18 +93,16 @@ public class UCS {
         
         if (solved) {
             // Reconstruct and print the solution path
-            printSolution(solution);
+            printSolution(solution, solutionWriter);
             
             // Print statistics
-            System.out.println("Jumlah langkah: " + solution.cost);
-            System.out.println("Jumlah node yang diperiksa: " + nodesVisited);
-            System.out.println("Waktu eksekusi: " + executionTime + " detik");
+            solutionWriter.writeStatistics(solution.cost, nodesVisited, executionTime);
         } else {
-            System.out.println("Tidak ada solusi yang ditemukan!");
-            System.out.println("Jumlah node yang diperiksa: " + nodesVisited);
-            System.out.println("Waktu eksekusi: " + executionTime + " detik");
+            solutionWriter.writeNoSolution(nodesVisited, executionTime);
         }
     }
+
+    
     
     /**
      * Find the move that transforms one board state to another
@@ -135,8 +141,9 @@ public class UCS {
      * Print the solution path
      * 
      * @param solution The solution node
+     * @param solutionWriter Writer for capturing the solution
      */
-    private void printSolution(Node solution) {
+    private void printSolution(Node solution, SolutionWriter solutionWriter) {
         // Reconstruct the path from the goal to the initial state
         List<Node> path = new ArrayList<>();
         Node current = solution;
@@ -160,7 +167,7 @@ public class UCS {
             String direction = move.getDirection(piece.isVertical());
             int distance = move.getDistance(piece.isVertical());
             
-            BoardPrinter.printBoardAfterMove(node.board, i + 1, pieceId, direction, distance);
+            solutionWriter.writeBoardAfterMove(node.board, i + 1, pieceId, direction, distance);
         }
     }
     
