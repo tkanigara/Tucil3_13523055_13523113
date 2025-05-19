@@ -6,89 +6,59 @@ import model.Move;
 import model.Piece;
 import util.BoardPrinter;
 
-/**
- * Iterative Deepening A* (IDA*) algorithm implementation for Rush Hour puzzles.
- * Combines the memory efficiency of iterative deepening with the performance of A*.
- */
 public class IDAStar {
     private int nodesVisited = 0;
     private int heuristicType;
     private List<Node> solutionPath;
     private gui.Gui.SolutionCollector collector;
     
-    // Heuristic types - same as GBFS and A* for consistency
     public static final int BLOCKING_PIECES = 1;
     public static final int MANHATTAN_DISTANCE = 2;
     public static final int COMBINED = 3;
     
-    /**
-     * Constructor with heuristic selection
-     * 
-     * @param heuristicType The type of heuristic to use
-     */
     public IDAStar(int heuristicType, gui.Gui.SolutionCollector collector) {
         this.heuristicType = heuristicType;
         this.collector = collector;
     }
     
-    /**
-     * Default constructor - uses blocking pieces heuristic
-     */
     public IDAStar() {
         this(BLOCKING_PIECES, null);
     }
-    
-    /**
-     * Solve the Rush Hour puzzle using IDA* Search.
-     * 
-     * @param initialBoard The initial board state
-     */
+
+    /* Solver IDA* */
     public void solve(Board initialBoard) {
         long startTime = System.currentTimeMillis();
         
-        // Print which heuristic is being used
         System.out.println("Using heuristic: " + getHeuristicName());
         
-        // Print initial board
         BoardPrinter.printInitialBoard(initialBoard);
         
-        // Calculate initial heuristic
         int initialHeuristic = calculateHeuristic(initialBoard);
         Node root = new Node(initialBoard, null, null, 0, initialHeuristic);
         
-        // Start with threshold = initial heuristic
         int threshold = initialHeuristic;
         
         boolean solved = false;
         int solutionCost = 0;
         
-        // Keep track of all visited states
         Set<String> globalVisited = new HashSet<>();
         
         while (!solved) {
-            // For each iteration, we need a fresh set of visited states
             Set<String> visited = new HashSet<>();
             visited.add(initialBoard.toString());
             globalVisited.add(initialBoard.toString());
             nodesVisited++;
             
-            // Track next threshold
-            int nextThreshold = Integer.MAX_VALUE;
-            
-            // Store solution path when found
             solutionPath = new ArrayList<>();
             
-            // Perform depth-first search with current threshold
             DFSResult result = depthFirstSearch(root, 0, threshold, visited, globalVisited);
             
             if (result.solved) {
                 solved = true;
                 solutionCost = result.cost;
             } else {
-                // If not solved, update threshold to the next minimum f-value
                 threshold = result.nextThreshold;
                 
-                // If threshold is too large, no solution exists
                 if (threshold == Integer.MAX_VALUE) {
                     break;
                 }
@@ -99,23 +69,19 @@ public class IDAStar {
         
         long endTime = System.currentTimeMillis();
         double executionTime = (endTime - startTime) / 1000.0;
-        
-        if (solved && collector != null) {
-            // Add initial board
-            collector.addStep(initialBoard);
-            
-            // Add each board state in the solution path
-            for (Node node : solutionPath) {
-                collector.addStep(node.board);
-            }
-        }
-
-        if (solved) {
-            // Print the solution path
+          if (solved) {
             Collections.reverse(solutionPath);
+            
+            if (collector != null) {
+                collector.addStep(initialBoard);
+                
+                for (Node node : solutionPath) {
+                    collector.addStep(node.board);
+                }
+            }
+            
             printSolution(solutionPath);
             
-            // Print statistics
             System.out.println("Jumlah langkah: " + solutionCost);
             System.out.println("Jumlah node yang diperiksa: " + nodesVisited);
             System.out.println("Waktu eksekusi: " + executionTime + " detik");
@@ -126,29 +92,15 @@ public class IDAStar {
         }
     }
     
-    /**
-     * Recursive depth-first search with a threshold limit.
-     * 
-     * @param node Current search node
-     * @param cost Current path cost (g)
-     * @param threshold Current f-cost threshold
-     * @param visited Set of visited states in this iteration
-     * @param globalVisited Set of all visited states across all iterations
-     * @return Result of the search
-     */
     private DFSResult depthFirstSearch(Node node, int cost, int threshold, 
                                       Set<String> visited, Set<String> globalVisited) {
-        // Calculate f = g + h
         int f = cost + node.heuristic;
         
-        // If f exceeds threshold, return the f value
         if (f > threshold) {
             return new DFSResult(false, 0, f);
         }
         
-        // Check if we've reached the goal
         if (node.board.isSolved()) {
-            // Save the solution path
             Node current = node;
             while (current.parent != null) {
                 solutionPath.add(current);
@@ -158,66 +110,47 @@ public class IDAStar {
             return new DFSResult(true, cost, f);
         }
         
-        // Track the minimum f-value of all children
         int min = Integer.MAX_VALUE;
         
-        // Generate all possible next states
         List<Board> nextStates = node.board.getNextStates();
         
         for (Board nextBoard : nextStates) {
             String boardString = nextBoard.toString();
             
-            // Skip if we've already visited this state in this iteration
             if (visited.contains(boardString)) {
                 continue;
             }
             
-            // Track if this is a state we've seen before in any iteration
             boolean isNewGlobal = !globalVisited.contains(boardString);
             
-            // Mark as visited
             visited.add(boardString);
             globalVisited.add(boardString);
             nodesVisited++;
             
-            // Find which piece was moved
             Move move = findMove(node.board, nextBoard);
             
-            // Calculate heuristic
             int heuristic = calculateHeuristic(nextBoard);
             
-            // Create new node
             Node childNode = new Node(nextBoard, node, move, cost + 1, heuristic);
             
-            // Recursively search from this node
             DFSResult result = depthFirstSearch(childNode, cost + 1, threshold, visited, globalVisited);
             
-            // If solution found, propagate it up
             if (result.solved) {
                 return result;
             }
             
-            // Otherwise, update minimum f-value
             min = Math.min(min, result.nextThreshold);
             
-            // Remove from visited to allow other paths to explore this state
             visited.remove(boardString);
             
-            // If this was a new state globally, but not the solution,
-            // we can remove it from the global visited set to allow future iterations
-            // to potentially explore it with a different path
             if (isNewGlobal && !result.solved) {
                 globalVisited.remove(boardString);
             }
         }
         
-        // Return the minimum f-value for the next threshold
         return new DFSResult(false, 0, min);
     }
     
-    /**
-     * Get the name of the current heuristic for display
-     */
     private String getHeuristicName() {
         switch (heuristicType) {
             case BLOCKING_PIECES:
@@ -231,9 +164,6 @@ public class IDAStar {
         }
     }
     
-    /**
-     * Calculate a heuristic value for a given board state.
-     */
     private int calculateHeuristic(Board board) {
         switch (heuristicType) {
             case MANHATTAN_DISTANCE:
@@ -246,10 +176,8 @@ public class IDAStar {
         }
     }
     
-    // Heuristic methods copied from A*
+    // Heuristik berdasarkan jumlah mobil yang menghalangi
     private int calculateBlockingPiecesHeuristic(Board board) {
-        // Same implementation as in AStar
-        // Find the primary piece
         Piece primaryPiece = board.getPrimaryPiece();
         if (primaryPiece == null) {
             return Integer.MAX_VALUE;
@@ -261,11 +189,9 @@ public class IDAStar {
         int rows = board.getRows();
         int cols = board.getCols();
         
-        // Count blocking pieces between primary piece and exit
         int blockingPieces = 0;
         
         if (primaryPiece.isHorizontal()) {
-            // Count horizontal blocking pieces
             if (exitCol == cols) {
                 int row = primaryPiece.getRow();
                 for (int col = primaryPiece.getCol() + primaryPiece.getLength(); col < cols; col++) {
@@ -282,7 +208,6 @@ public class IDAStar {
                 }
             }
         } else {
-            // Count vertical blocking pieces
             if (exitRow == rows) {
                 int col = primaryPiece.getCol();
                 for (int row = primaryPiece.getRow() + primaryPiece.getLength(); row < rows; row++) {
@@ -303,8 +228,8 @@ public class IDAStar {
         return blockingPieces;
     }
     
+    // Heuristik berdasarkan jarak Manhattan ke pintu keluar
     private int calculateManhattanHeuristic(Board board) {
-        // Same implementation as in AStar
         Piece primaryPiece = board.getPrimaryPiece();
         if (primaryPiece == null) {
             return Integer.MAX_VALUE;
@@ -334,6 +259,7 @@ public class IDAStar {
         return manhattanDistance;
     }
     
+    // menghitung heuristik gabungan dari blocking pieces dan Manhattan distance
     private int calculateCombinedHeuristic(Board board) {
         int blockingPieces = calculateBlockingPiecesHeuristic(board);
         int manhattanDistance = calculateManhattanHeuristic(board);
@@ -341,9 +267,6 @@ public class IDAStar {
         return blockingPieces + manhattanDistance;
     }
     
-    /**
-     * Find the move that transforms one board state to another
-     */
     private Move findMove(Board from, Board to) {
         List<Piece> fromPieces = from.getPieces();
         List<Piece> toPieces = to.getPieces();
@@ -354,7 +277,6 @@ public class IDAStar {
             
             if (fromPiece.getRow() != toPiece.getRow() || 
                 fromPiece.getCol() != toPiece.getCol()) {
-                // Found the moved piece
                 return new Move(
                     i, 
                     fromPiece.getRow(), 
@@ -368,9 +290,7 @@ public class IDAStar {
         throw new IllegalStateException("Could not find the move between board states");
     }
     
-    /**
-     * Print the solution path
-     */
+    // Mencetak solusi utk setiap langkah
     private void printSolution(List<Node> path) {
         for (int i = 0; i < path.size(); i++) {
             Node node = path.get(i);
@@ -386,15 +306,12 @@ public class IDAStar {
         }
     }
     
-    /**
-     * Inner class representing a node in the search tree.
-     */
     private static class Node {
-        Board board;       // Current board state
-        Node parent;       // Parent node
-        Move move;         // Move that was applied to reach this state
-        int cost;          // g = Path cost
-        int heuristic;     // h = Heuristic value
+        Board board;
+        Node parent;
+        Move move;
+        int cost;
+        int heuristic;
         
         Node(Board board, Node parent, Move move, int cost, int heuristic) {
             this.board = board;
@@ -405,13 +322,10 @@ public class IDAStar {
         }
     }
     
-    /**
-     * Class to hold the result of a depth-first search iteration.
-     */
     private static class DFSResult {
-        boolean solved;        // Whether a solution was found
-        int cost;              // Solution cost (if found)
-        int nextThreshold;     // Next threshold to use (if not solved)
+        boolean solved;
+        int cost;
+        int nextThreshold;
         
         DFSResult(boolean solved, int cost, int nextThreshold) {
             this.solved = solved;

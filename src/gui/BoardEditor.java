@@ -9,19 +9,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import model.Board;
-import model.Piece;
-
-/**
- * BoardEditor provides a graphical interface for creating Rush Hour puzzles.
- */
 public class BoardEditor extends JFrame {
-    // Board parameters
     private int rows = 6;
     private int cols = 6;
     private EditorPanel boardPanel;
     
-    // Editor state
     private char nextPieceId = 'A';
     private boolean placingPrimaryPiece = false;
     private boolean placingExit = false;
@@ -30,7 +22,6 @@ public class BoardEditor extends JFrame {
     private int exitRow = -1;
     private int exitCol = -1;
     
-    // UI components
     private JButton createButton;
     private JButton cancelButton;
     private JButton primaryPieceButton;
@@ -41,14 +32,9 @@ public class BoardEditor extends JFrame {
     private JButton undoButton;
     private JLabel statusLabel;
     
-    // Board data
     private List<EditorPiece> placedPieces = new ArrayList<>();
     private Map<Character, Color> pieceColors = new HashMap<>();
     
-    /**
-     * Constructor - sets up the board editor dialog
-     * @param parent Parent frame
-     */
     public BoardEditor(JFrame parent) {
         super("Rush Hour Board Editor");
         setModal(parent);
@@ -56,20 +42,14 @@ public class BoardEditor extends JFrame {
         setSize(800, 700);
         setLayout(new BorderLayout());
         
-        // Create UI components
         createControlPanel();
         createBoardPanel();
         createStatusBar();
         
-        // Center on parent
         setLocationRelativeTo(parent);
     }
     
-    /**
-     * Set the JFrame to act like a modal dialog
-     */
     private void setModal(JFrame parent) {
-        // Make the dialog appear modal by disabling the parent
         if (parent != null) {
             addWindowListener(new WindowAdapter() {
                 @Override
@@ -86,13 +66,9 @@ public class BoardEditor extends JFrame {
         }
     }
     
-    /**
-     * Create the top control panel with buttons and selectors
-     */
     private void createControlPanel() {
         JPanel controlPanel = new JPanel(new BorderLayout());
         
-        // Board size panel
         JPanel sizePanel = new JPanel();
         JLabel rowsLabel = new JLabel("Rows:");
         JSpinner rowsSpinner = new JSpinner(new SpinnerNumberModel(6, 3, 20, 1));
@@ -113,7 +89,6 @@ public class BoardEditor extends JFrame {
         sizePanel.add(colsLabel);
         sizePanel.add(colsSpinner);
         
-        // Piece creation panel
         JPanel piecePanel = new JPanel();
         
         primaryPieceButton = new JButton("Place Primary Piece (P)");
@@ -151,7 +126,6 @@ public class BoardEditor extends JFrame {
         piecePanel.add(clearButton);
         piecePanel.add(undoButton);
         
-        // Button panel for create/cancel
         JPanel buttonPanel = new JPanel();
         createButton = new JButton("Create Puzzle");
         createButton.addActionListener(e -> createPuzzle());
@@ -163,7 +137,6 @@ public class BoardEditor extends JFrame {
         buttonPanel.add(createButton);
         buttonPanel.add(cancelButton);
         
-        // Add all panels to control panel
         controlPanel.add(sizePanel, BorderLayout.NORTH);
         controlPanel.add(piecePanel, BorderLayout.CENTER);
         controlPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -171,9 +144,6 @@ public class BoardEditor extends JFrame {
         add(controlPanel, BorderLayout.NORTH);
     }
     
-    /**
-     * Create the board panel for piece placement
-     */
     private void createBoardPanel() {
         boardPanel = new EditorPanel();
         boardPanel.setPreferredSize(new Dimension(600, 600));
@@ -182,9 +152,6 @@ public class BoardEditor extends JFrame {
         add(new JScrollPane(centeringPanel), BorderLayout.CENTER);
     }
     
-    /**
-     * Create the status bar
-     */
     private void createStatusBar() {
         JPanel statusPanel = new JPanel();
         statusLabel = new JLabel("Click on the board to place pieces");
@@ -192,11 +159,7 @@ public class BoardEditor extends JFrame {
         add(statusPanel, BorderLayout.SOUTH);
     }
     
-    /**
-     * Toggle primary piece placement mode
-     */
     private void togglePrimaryPiecePlacement() {
-        // Can't place primary piece if one already exists
         if (hasPrimaryPiece()) {
             JOptionPane.showMessageDialog(this, 
                 "Primary piece already placed. Clear board or remove it first.",
@@ -210,34 +173,25 @@ public class BoardEditor extends JFrame {
         updateButtonStates();
     }
     
-    /**
-     * Toggle exit placement mode
-     */
     private void toggleExitPlacement() {
         placingExit = !placingExit;
         placingPrimaryPiece = false;
         updateButtonStates();
     }
     
-    /**
-     * Update button states based on current editor mode
-     */
     private void updateButtonStates() {
         primaryPieceButton.setBackground(placingPrimaryPiece ? Color.YELLOW : null);
         exitButton.setBackground(placingExit ? Color.YELLOW : null);
         
-        // Update length spinner max value based on orientation
         int maxLength = isVertical ? rows : cols;
         SpinnerNumberModel model = (SpinnerNumberModel) lengthSpinner.getModel();
         model.setMaximum(maxLength);
         
-        // If current length exceeds max, adjust it
         if (pieceLength > maxLength) {
             lengthSpinner.setValue(maxLength);
             pieceLength = maxLength;
         }
         
-        // Update status text
         if (placingPrimaryPiece) {
             statusLabel.setText("Click on the board to place the primary piece (P)");
         } else if (placingExit) {
@@ -246,13 +200,9 @@ public class BoardEditor extends JFrame {
             statusLabel.setText("Click on the board to place piece '" + nextPieceId + "'");
         }
         
-        // Enable create button only if we have primary piece and exit
         createButton.setEnabled(hasPrimaryPiece() && exitRow != -1 && exitCol != -1);
     }
     
-    /**
-     * Check if a primary piece exists
-     */
     private boolean hasPrimaryPiece() {
         for (EditorPiece piece : placedPieces) {
             if (piece.id == 'P') {
@@ -262,9 +212,6 @@ public class BoardEditor extends JFrame {
         return false;
     }
     
-    /**
-     * Clear the board completely
-     */
     private void clearBoard() {
         placedPieces.clear();
         exitRow = -1;
@@ -279,44 +226,34 @@ public class BoardEditor extends JFrame {
         boardPanel.repaint();
     }
     
-    /**
-     * Reset the board for a dimension change
-     */
+    // Reset board
     private void resetBoard() {
         clearBoard();
-        updateButtonStates(); // Update length spinner max
+        updateButtonStates();
         boardPanel.repaint();
     }
     
-    /**
-     * Undo the last piece placement
-     */
+    // buat undo
     private void undoLastPlacement() {
         if (!placedPieces.isEmpty()) {
             EditorPiece removed = placedPieces.remove(placedPieces.size() - 1);
             
-            // If we removed the primary piece, we need to update create button state
             if (removed.id == 'P') {
                 createButton.setEnabled(false);
             }
             
-            // If it was a regular piece, update the next piece ID
             if (removed.id != 'P' && removed.id > 'A') {
                 nextPieceId = (char) (removed.id - 1);
             }
             
-            // Update button states
             undoButton.setEnabled(!placedPieces.isEmpty());
             updateButtonStates();
             boardPanel.repaint();
         }
     }
     
-    /**
-     * Create the puzzle and save it
-     */
+    // Buat dan simpan puzzle
     private void createPuzzle() {
-        // Validate that we have a primary piece and exit
         if (!hasPrimaryPiece()) {
             JOptionPane.showMessageDialog(this, 
                 "You must place a primary piece (P) on the board.",
@@ -333,7 +270,6 @@ public class BoardEditor extends JFrame {
             return;
         }
         
-        // Show file save dialog
         JFileChooser fileChooser = new JFileChooser(new File("test/input"));
         fileChooser.setDialogTitle("Save Puzzle");
         fileChooser.setSelectedFile(new File("custom_puzzle.txt"));
@@ -342,7 +278,6 @@ public class BoardEditor extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             
-            // Make sure the file has .txt extension
             if (!file.getName().toLowerCase().endsWith(".txt")) {
                 file = new File(file.getAbsolutePath() + ".txt");
             }
@@ -364,19 +299,12 @@ public class BoardEditor extends JFrame {
         }
     }
     
-    /**
-     * Save the puzzle to a file in the format expected by the Rush Hour solver
-     * 
-     * @param file The file to save to
-     * @throws IOException If there's an error writing to the file
-     */
+    // Simpan puzzle ke file
     private void savePuzzleToFile(File file) throws IOException {
         FileWriter writer = new FileWriter(file);
         
-        // Write board dimensions
         writer.write(rows + " " + cols + "\n");
         
-        // Count regular pieces (excluding primary piece)
         int regularPieceCount = 0;
         for (EditorPiece piece : placedPieces) {
             if (piece.id != 'P') {
@@ -384,10 +312,8 @@ public class BoardEditor extends JFrame {
             }
         }
         
-        // Write number of pieces - don't include the primary piece in the count
         writer.write(regularPieceCount + "\n");
         
-        // Create grid representation
         char[][] grid = new char[rows][cols];
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -395,7 +321,6 @@ public class BoardEditor extends JFrame {
             }
         }
         
-        // Place pieces on grid
         for (EditorPiece piece : placedPieces) {
             if (piece.isVertical) {
                 for (int r = piece.row; r < piece.row + piece.length; r++) {
@@ -408,19 +333,15 @@ public class BoardEditor extends JFrame {
             }
         }
         
-        // Write grid with exit marker 'K'
         for (int r = 0; r < rows; r++) {
-            // Handle left exit on this row
             if (exitRow == r && exitCol == -1) {
                 writer.write('K');
             }
             
-            // Write the row content
             for (int c = 0; c < cols; c++) {
                 writer.write(grid[r][c]);
             }
             
-            // Handle right exit on this row
             if (exitRow == r && exitCol == cols) {
                 writer.write('K');
             }
@@ -428,9 +349,7 @@ public class BoardEditor extends JFrame {
             writer.write("\n");
         }
         
-        // Handle top and bottom exits (these need to be written as separate rows)
-        if (exitRow == -1) { // Top exit
-            // Create a row of dots with K at the exit column
+        if (exitRow == -1) {
             for (int c = 0; c < cols; c++) {
                 if (c == exitCol) {
                     writer.write('K');
@@ -439,8 +358,7 @@ public class BoardEditor extends JFrame {
                 }
             }
             writer.write("\n");
-        } else if (exitRow == rows) { // Bottom exit
-            // Create a row of dots with K at the exit column
+        } else if (exitRow == rows) {
             for (int c = 0; c < cols; c++) {
                 if (c == exitCol) {
                     writer.write('K');
@@ -454,16 +372,11 @@ public class BoardEditor extends JFrame {
         writer.close();
     }
     
-    /**
-     * Get a color for a piece
-     */
     private Color getPieceColor(char id) {
-        // Primary piece is always red
         if (id == 'P') {
             return Color.RED;
         }
         
-        // Get or create a color for this piece
         if (!pieceColors.containsKey(id)) {
             pieceColors.put(id, generatePastelColor());
         }
@@ -471,20 +384,15 @@ public class BoardEditor extends JFrame {
         return pieceColors.get(id);
     }
     
-    /**
-     * Generate a random pastel color
-     */
     private Color generatePastelColor() {
         float hue = (float) Math.random();
-        float saturation = 0.5f; // Pastels have lower saturation
-        float brightness = 0.9f; // Pastels are bright
+        float saturation = 0.5f;
+        float brightness = 0.9f;
         
         return Color.getHSBColor(hue, saturation, brightness);
     }
     
-    /**
-     * The panel that displays the board and handles mouse input
-     */
+    // menampilkan papan dan menangani input mouse
     private class EditorPanel extends JPanel {
         private static final int CELL_SIZE = 40;
         private static final int BORDER_SIZE = 20;
@@ -498,7 +406,6 @@ public class BoardEditor extends JFrame {
                 }
             });
             
-            // For hover effect
             addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseMoved(MouseEvent e) {
@@ -507,7 +414,6 @@ public class BoardEditor extends JFrame {
                 }
             });
             
-            // Clear hover when mouse exits
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseExited(MouseEvent e) {
@@ -523,18 +429,16 @@ public class BoardEditor extends JFrame {
             drawBoard(g);
         }
         
+        // Menggambar papan dan semua elemennya
         private void drawBoard(Graphics g) {
-            // Calculate board position
             int startX = (getWidth() - cols * CELL_SIZE) / 2;
             int startY = (getHeight() - rows * CELL_SIZE) / 2;
             int boardWidth = cols * CELL_SIZE;
             int boardHeight = rows * CELL_SIZE;
             
-            // Draw board background
             g.setColor(Color.WHITE);
             g.fillRect(startX, startY, boardWidth, boardHeight);
             
-            // Draw grid
             g.setColor(Color.LIGHT_GRAY);
             for (int r = 0; r <= rows; r++) {
                 g.drawLine(startX, startY + r * CELL_SIZE, startX + boardWidth, startY + r * CELL_SIZE);
@@ -543,26 +447,22 @@ public class BoardEditor extends JFrame {
                 g.drawLine(startX + c * CELL_SIZE, startY, startX + c * CELL_SIZE, startY + boardHeight);
             }
             
-            // Draw exit marker
             g.setColor(Color.GREEN);
             if (exitRow != -1 || exitCol != -1) {
-                if (exitRow == -1) { // Top exit
+                if (exitRow == -1) {
                     g.fillRect(startX + exitCol * CELL_SIZE, startY - CELL_SIZE/2, CELL_SIZE, CELL_SIZE/2);
-                } else if (exitRow == rows) { // Bottom exit
+                } else if (exitRow == rows) {
                     g.fillRect(startX + exitCol * CELL_SIZE, startY + rows * CELL_SIZE, CELL_SIZE, CELL_SIZE/2);
-                } else if (exitCol == -1) { // Left exit
+                } else if (exitCol == -1) {
                     g.fillRect(startX - CELL_SIZE/2, startY + exitRow * CELL_SIZE, CELL_SIZE/2, CELL_SIZE);
-                } else if (exitCol == cols) { // Right exit
+                } else if (exitCol == cols) {
                     g.fillRect(startX + cols * CELL_SIZE, startY + exitRow * CELL_SIZE, CELL_SIZE/2, CELL_SIZE);
                 }
             }
             
-            // Draw pieces
             for (EditorPiece piece : placedPieces) {
-                // Get color for the piece
                 Color pieceColor = getPieceColor(piece.id);
                 
-                // Draw the piece
                 g.setColor(pieceColor);
                 if (piece.isVertical) {
                     g.fillRect(startX + piece.col * CELL_SIZE + 2, 
@@ -576,7 +476,6 @@ public class BoardEditor extends JFrame {
                               CELL_SIZE - 4);
                 }
                 
-                // Draw piece ID
                 g.setColor(Color.BLACK);
                 Font font = new Font("Arial", Font.BOLD, CELL_SIZE / 3);
                 g.setFont(font);
@@ -596,7 +495,6 @@ public class BoardEditor extends JFrame {
                 g.drawString(text, textX, textY);
             }
             
-            // Draw preview of the piece to be placed (when hovering)
             if ((placingPrimaryPiece || !placingExit) && hoverPoint != null) {
                 int mouseX = hoverPoint.x;
                 int mouseY = hoverPoint.y;
@@ -605,7 +503,6 @@ public class BoardEditor extends JFrame {
                 int gridRow = (mouseY - startY) / CELL_SIZE;
                 
                 if (gridCol >= 0 && gridCol < cols && gridRow >= 0 && gridRow < rows) {
-                    // Check if the piece would fit
                     boolean fits = true;
                     if (isVertical) {
                         fits = gridRow + pieceLength <= rows;
@@ -614,7 +511,6 @@ public class BoardEditor extends JFrame {
                     }
                     
                     if (fits) {
-                        // Check if space is occupied
                         boolean overlaps = false;
                         for (int i = 0; i < pieceLength; i++) {
                             int checkRow = isVertical ? gridRow + i : gridRow;
@@ -641,16 +537,15 @@ public class BoardEditor extends JFrame {
                             if (overlaps) break;
                         }
                         
-                        // Draw the preview piece with appropriate color
                         Color hoverColor;
                         if (placingPrimaryPiece) {
                             hoverColor = overlaps ? 
-                                new Color(255, 0, 0, 128) : // Transparent red if overlapping
-                                new Color(255, 0, 0, 64);   // More transparent red if valid
+                                new Color(255, 0, 0, 128) :
+                                new Color(255, 0, 0, 64);
                         } else {
                             hoverColor = overlaps ? 
-                                new Color(255, 0, 0, 128) : // Transparent red if overlapping
-                                new Color(0, 150, 0, 64);   // Transparent green if valid
+                                new Color(255, 0, 0, 128) :
+                                new Color(0, 150, 0, 64);
                         }
                         
                         g.setColor(hoverColor);
@@ -667,7 +562,6 @@ public class BoardEditor extends JFrame {
                                       CELL_SIZE - 4);
                         }
                         
-                        // Show piece ID in the hover preview
                         g.setColor(Color.BLACK);
                         Font font = new Font("Arial", Font.BOLD, CELL_SIZE / 3);
                         g.setFont(font);
@@ -689,49 +583,43 @@ public class BoardEditor extends JFrame {
                 }
             }
             
-            // Draw exit placement hover effect
             if (placingExit && hoverPoint != null) {
                 int mouseX = hoverPoint.x;
                 int mouseY = hoverPoint.y;
                 
-                // Check each edge for hover
                 boolean validHover = false;
                 
-                // Top edge
                 if (mouseY < startY && mouseY > startY - CELL_SIZE/2) {
                     int col = (mouseX - startX) / CELL_SIZE;
                     if (col >= 0 && col < cols) {
-                        g.setColor(new Color(0, 200, 0, 128)); // Transparent green
+                        g.setColor(new Color(0, 200, 0, 128));
                         g.fillRect(startX + col * CELL_SIZE, startY - CELL_SIZE/2, CELL_SIZE, CELL_SIZE/2);
                         validHover = true;
                     }
                 }
                 
-                // Bottom edge
                 if (!validHover && mouseY > startY + boardHeight && mouseY < startY + boardHeight + CELL_SIZE/2) {
                     int col = (mouseX - startX) / CELL_SIZE;
                     if (col >= 0 && col < cols) {
-                        g.setColor(new Color(0, 200, 0, 128)); // Transparent green
+                        g.setColor(new Color(0, 200, 0, 128));
                         g.fillRect(startX + col * CELL_SIZE, startY + rows * CELL_SIZE, CELL_SIZE, CELL_SIZE/2);
                         validHover = true;
                     }
                 }
                 
-                // Left edge
                 if (!validHover && mouseX < startX && mouseX > startX - CELL_SIZE/2) {
                     int row = (mouseY - startY) / CELL_SIZE;
                     if (row >= 0 && row < rows) {
-                        g.setColor(new Color(0, 200, 0, 128)); // Transparent green
+                        g.setColor(new Color(0, 200, 0, 128));
                         g.fillRect(startX - CELL_SIZE/2, startY + row * CELL_SIZE, CELL_SIZE/2, CELL_SIZE);
                         validHover = true;
                     }
                 }
                 
-                // Right edge
                 if (!validHover && mouseX > startX + boardWidth && mouseX < startX + boardWidth + CELL_SIZE/2) {
                     int row = (mouseY - startY) / CELL_SIZE;
                     if (row >= 0 && row < rows) {
-                        g.setColor(new Color(0, 200, 0, 128)); // Transparent green
+                        g.setColor(new Color(0, 200, 0, 128));
                         g.fillRect(startX + cols * CELL_SIZE, startY + row * CELL_SIZE, CELL_SIZE/2, CELL_SIZE);
                     }
                 }
@@ -739,15 +627,12 @@ public class BoardEditor extends JFrame {
         }
         
         private void handleMouseClick(int x, int y) {
-            // Calculate board position
             int startX = (getWidth() - cols * CELL_SIZE) / 2;
             int startY = (getHeight() - rows * CELL_SIZE) / 2;
             int boardWidth = cols * CELL_SIZE;
             int boardHeight = rows * CELL_SIZE;
             
-            // Check if we're in exit placement mode
             if (placingExit) {
-                // Check top edge
                 if (y < startY && y > startY - CELL_SIZE/2) {
                     int col = (x - startX) / CELL_SIZE;
                     if (col >= 0 && col < cols) {
@@ -760,7 +645,6 @@ public class BoardEditor extends JFrame {
                     }
                 }
                 
-                // Check bottom edge
                 if (y > startY + boardHeight && y < startY + boardHeight + CELL_SIZE/2) {
                     int col = (x - startX) / CELL_SIZE;
                     if (col >= 0 && col < cols) {
@@ -773,7 +657,6 @@ public class BoardEditor extends JFrame {
                     }
                 }
                 
-                // Check left edge
                 if (x < startX && x > startX - CELL_SIZE/2) {
                     int row = (y - startY) / CELL_SIZE;
                     if (row >= 0 && row < rows) {
@@ -786,7 +669,6 @@ public class BoardEditor extends JFrame {
                     }
                 }
                 
-                // Check right edge
                 if (x > startX + boardWidth && x < startX + boardWidth + CELL_SIZE/2) {
                     int row = (y - startY) / CELL_SIZE;
                     if (row >= 0 && row < rows) {
@@ -799,20 +681,16 @@ public class BoardEditor extends JFrame {
                     }
                 }
                 
-                // If we got here, the click wasn't on a valid exit location
                 return;
             }
             
-            // Convert to grid coordinates
             int gridCol = (x - startX) / CELL_SIZE;
             int gridRow = (y - startY) / CELL_SIZE;
             
-            // Check if click is within the board
             if (gridCol < 0 || gridCol >= cols || gridRow < 0 || gridRow >= rows) {
                 return;
             }
             
-            // Check if the piece would fit
             if (isVertical && gridRow + pieceLength > rows) {
                 statusLabel.setText("Piece doesn't fit! Try a different position or orientation.");
                 return;
@@ -822,7 +700,6 @@ public class BoardEditor extends JFrame {
                 return;
             }
             
-            // Check if space is occupied
             for (int i = 0; i < pieceLength; i++) {
                 int checkRow = isVertical ? gridRow + i : gridRow;
                 int checkCol = isVertical ? gridCol : gridCol + i;
@@ -846,12 +723,10 @@ public class BoardEditor extends JFrame {
                 }
             }
             
-            // Place the piece
             char pieceId = placingPrimaryPiece ? 'P' : nextPieceId;
             EditorPiece newPiece = new EditorPiece(pieceId, gridRow, gridCol, pieceLength, isVertical);
             placedPieces.add(newPiece);
             
-            // Update state
             if (placingPrimaryPiece) {
                 placingPrimaryPiece = false;
             } else {
@@ -872,9 +747,6 @@ public class BoardEditor extends JFrame {
         }
     }
     
-    /**
-     * Class to represent a piece in the editor
-     */
     private static class EditorPiece {
         char id;
         int row;

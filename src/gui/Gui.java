@@ -3,7 +3,6 @@ package gui;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,12 +20,11 @@ import model.Piece;
 import util.FileParser;
 
 public class Gui extends JFrame {
-    // GUI components
     private JPanel boardPanel;
     private JButton loadButton;
     private JButton solveButton;
     private JButton createBoardButton;
-    private JButton saveButton; // New save button
+    private JButton saveButton;
     private JComboBox<String> algorithmSelector;
     private JComboBox<String> heuristicSelector;
     private JLabel statusLabel;
@@ -35,7 +33,6 @@ public class Gui extends JFrame {
     private JButton stopButton;
     private JButton stepButton;
     
-    // Game state
     private Board currentBoard;
     private List<Board> solutionSteps;
     private List<Move> solutionMoves;
@@ -43,51 +40,39 @@ public class Gui extends JFrame {
     private Timer animationTimer;
     private AtomicBoolean animationRunning = new AtomicBoolean(false);
     
-    // Animation states for vanishing effect
     private boolean showExitAnimation = false;
     private boolean showingFinalState = false;
     
-    // Performance metrics
     private int nodesVisited = 0;
     private double executionTime = 0;
     
-    // Colors for different pieces
     private Map<Character, Color> pieceColors = new HashMap<>();
     
-    /**
-     * Constructor - initialize the GUI
-     */
     public Gui() {
-        // Set up the JFrame
         super("Rush Hour Puzzle Solver");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
         setLayout(new BorderLayout());
         
-        // Create components
         createTopPanel();
         createBoardPanel();
         createBottomPanel();
         
-        // Initialize animation timer
         animationTimer = new Timer(500, e -> {
             if (currentStep < solutionSteps.size() - 1) {
                 currentStep++;
                 
-                // Check if we've reached the final step
                 if (currentStep == solutionSteps.size() - 1) {
                     showingFinalState = true;
                     showExitAnimation = false;
                     updateBoardDisplay();
                     
-                    // After a delay, show the exit animation where car vanishes
                     Timer exitAnimationTimer = new Timer(800, evt -> {
                         ((Timer)evt.getSource()).stop();
                         showingFinalState = false;
                         showExitAnimation = true;
                         updateBoardDisplay();
                         
-                        // After another delay, show completion message
                         Timer completionTimer = new Timer(1000, evt2 -> {
                             ((Timer)evt2.getSource()).stop();
                             animationTimer.stop();
@@ -110,19 +95,14 @@ public class Gui extends JFrame {
             }
         });
         
-        // Display the window
         pack();
-        setLocationRelativeTo(null); // Center on screen
+        setLocationRelativeTo(null);
         setVisible(true);
     }
     
-    /**
-     * Create the top control panel with file operations and algorithm selection
-     */
     private void createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         
-        // File operations
         JPanel filePanel = new JPanel();
         loadButton = new JButton("Load Puzzle");
         loadButton.addActionListener(e -> loadPuzzleFromFile());
@@ -132,13 +112,12 @@ public class Gui extends JFrame {
         
         saveButton = new JButton("Save Solution");
         saveButton.addActionListener(e -> saveSolutionToFile());
-        saveButton.setEnabled(false); // Initially disabled until we have a solution
+        saveButton.setEnabled(false);
         
         filePanel.add(loadButton);
         filePanel.add(createBoardButton);
         filePanel.add(saveButton);
         
-        // Algorithm selection
         JPanel algoPanel = new JPanel();
         algorithmSelector = new JComboBox<>(new String[] {
             "Uniform Cost Search (UCS)",
@@ -155,9 +134,8 @@ public class Gui extends JFrame {
         heuristicSelector.setEnabled(false);
         
         algorithmSelector.addActionListener(e -> {
-            // Enable heuristic selection only for algorithms that use it
             int selectedIndex = algorithmSelector.getSelectedIndex();
-            heuristicSelector.setEnabled(selectedIndex != 0); // UCS doesn't use heuristics
+            heuristicSelector.setEnabled(selectedIndex != 0);
         });
         
         solveButton = new JButton("Solve");
@@ -176,9 +154,6 @@ public class Gui extends JFrame {
         add(topPanel, BorderLayout.NORTH);
     }
     
-    /**
-     * Create the central board panel for displaying the puzzle
-     */
     private void createBoardPanel() {
         boardPanel = new JPanel() {
             @Override
@@ -187,20 +162,15 @@ public class Gui extends JFrame {
                 drawBoard(g);
             }
         };
-        // Increase the preferred size to ensure there's room for the exits
         boardPanel.setPreferredSize(new Dimension(600, 600));
         boardPanel.setBackground(Color.WHITE);
         
         add(boardPanel, BorderLayout.CENTER);
     }
     
-    /**
-     * Create the bottom panel with animation controls and status info
-     */
     private void createBottomPanel() {
         JPanel bottomPanel = new JPanel(new BorderLayout());
         
-        // Animation controls
         JPanel controlPanel = new JPanel();
         playPauseButton = new JButton("Play");
         playPauseButton.addActionListener(e -> togglePlayPause());
@@ -231,7 +201,6 @@ public class Gui extends JFrame {
         controlPanel.add(stepButton);
         controlPanel.add(stopButton);
         
-        // Status label
         statusLabel = new JLabel("Ready to load or create a puzzle");
         JPanel statusPanel = new JPanel();
         statusPanel.add(statusLabel);
@@ -242,12 +211,10 @@ public class Gui extends JFrame {
         add(bottomPanel, BorderLayout.SOUTH);
     }
     
-    /**
-     * Load a puzzle from a file
-     */
+    // Load puzzle dari file
     private void loadPuzzleFromFile() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("test/input")); // Set initial directory to test folder
+        fileChooser.setCurrentDirectory(new File("test/input"));
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
         
         int result = fileChooser.showOpenDialog(this);
@@ -257,14 +224,12 @@ public class Gui extends JFrame {
                 FileParser parser = new FileParser();
                 currentBoard = parser.parseFile(selectedFile.getAbsolutePath());
                 
-                // Reset animation state
                 solutionSteps = null;
                 solutionMoves = null;
                 currentStep = 0;
                 showExitAnimation = false;
                 showingFinalState = false;
                 
-                // Update UI
                 updateBoardDisplay();
                 solveButton.setEnabled(true);
                 playPauseButton.setEnabled(false);
@@ -274,18 +239,14 @@ public class Gui extends JFrame {
                 
                 statusLabel.setText("Puzzle loaded from " + selectedFile.getName());
                 
-                // Assign colors to pieces
                 assignColorsToNewPieces();
                 
             } catch (IOException ex) {
-                // File read error
                 showErrorDialog("File Error", 
                     "Could not read the file: " + ex.getMessage());
             } catch (IllegalArgumentException ex) {
-                // File format error
                 showErrorDialog("File Format Error", ex.getMessage());
             } catch (Exception ex) {
-                // Unexpected error
                 showErrorDialog("Unexpected Error", 
                     "An unexpected error occurred: " + ex.getMessage());
                 ex.printStackTrace();
@@ -293,9 +254,6 @@ public class Gui extends JFrame {
         }
     }
 
-    /**
-     * Display an error dialog with a detailed message
-     */
     private void showErrorDialog(String title, String message) {
         JOptionPane.showMessageDialog(this, 
             message, 
@@ -303,17 +261,12 @@ public class Gui extends JFrame {
             JOptionPane.ERROR_MESSAGE);
     }
     
-    /**
-     * Open a board editor to create a puzzle
-     */
     private void openBoardEditor() {
         BoardEditor editor = new BoardEditor(this);
         editor.setVisible(true);
     }
     
-    /**
-     * Save the solution steps to a text file
-     */
+    // Save ke file txt
     private void saveSolutionToFile() {
         if (solutionSteps == null || solutionSteps.size() <= 1) {
             JOptionPane.showMessageDialog(this,
@@ -324,24 +277,22 @@ public class Gui extends JFrame {
         }
         
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("test/output")); // Set initial directory to output folder
+        fileChooser.setCurrentDirectory(new File("test/output"));
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
         
         int result = fileChooser.showSaveDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             
-            // Add .txt extension if not present
             if (!selectedFile.getName().toLowerCase().endsWith(".txt")) {
                 selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
             }
             
             try (PrintWriter writer = new PrintWriter(new FileWriter(selectedFile))) {
-                // Write header
                 writer.println("Rush Hour Puzzle Solution");
                 writer.println("========================");
                 writer.println("Algorithm: " + algorithmSelector.getSelectedItem());
-                if (algorithmSelector.getSelectedIndex() != 0) { // Not UCS
+                if (algorithmSelector.getSelectedIndex() != 0) {
                     writer.println("Heuristic: " + heuristicSelector.getSelectedItem());
                 }
                 writer.println("Total steps: " + (solutionSteps.size() - 1));
@@ -349,12 +300,10 @@ public class Gui extends JFrame {
                 writer.println("Execution time: " + executionTime + " seconds");
                 writer.println();
                 
-                // Write initial state
                 writer.println("Initial Board:");
                 writer.println(solutionSteps.get(0).toString());
                 writer.println();
                 
-                // Write each step
                 for (int i = 1; i < solutionSteps.size(); i++) {
                     Move move = solutionMoves.get(i-1);
                     Board board = solutionSteps.get(i);
@@ -381,19 +330,14 @@ public class Gui extends JFrame {
         }
     }
     
-    /**
-     * Solve the puzzle using the selected algorithm
-     */
     private void solvePuzzle() {
     if (currentBoard == null) {
         return;
     }
     
-    // Get selected algorithm and heuristic
     int algorithmIndex = algorithmSelector.getSelectedIndex();
-    int heuristicIndex = heuristicSelector.getSelectedIndex() + 1; // 1-based for the algorithm classes
+    int heuristicIndex = heuristicSelector.getSelectedIndex() + 1;
     
-    // Reset solution data
     solutionSteps = null;
     solutionMoves = null;
     currentStep = 0;
@@ -402,12 +346,10 @@ public class Gui extends JFrame {
     showExitAnimation = false;
     showingFinalState = false;
     
-    // Set cursor to wait
     setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     solveButton.setEnabled(false);
     statusLabel.setText("Solving puzzle...");
     
-    // Run solver in background thread
     new SwingWorker<List<Board>, Void>() {
         @Override
         protected List<Board> doInBackground() throws Exception {
@@ -454,7 +396,6 @@ public class Gui extends JFrame {
                         currentStep = 0;
                         updateBoardDisplay();
                         
-                        // Enable animation controls
                         playPauseButton.setEnabled(true);
                         stopButton.setEnabled(true);
                         stepButton.setEnabled(true);
@@ -478,7 +419,6 @@ public class Gui extends JFrame {
                     statusLabel.setText("Error solving puzzle");
                     ex.printStackTrace();
                 } finally {
-                    // Reset cursor
                     setCursor(Cursor.getDefaultCursor());
                     solveButton.setEnabled(true);
                 }
@@ -486,16 +426,13 @@ public class Gui extends JFrame {
         }.execute();
     }
     
-    /**
-     * Toggle between play and pause for animation
-     */
+    // buat play pause
     private void togglePlayPause() {
         if (solutionSteps == null || solutionSteps.size() <= 1) {
             return;
         }
         
         if (currentStep >= solutionSteps.size() - 1 && showExitAnimation) {
-            // If we're at the end with exit animation, restart from beginning
             showExitAnimation = false;
             showingFinalState = false;
             currentStep = 0;
@@ -503,12 +440,10 @@ public class Gui extends JFrame {
         }
         
         if (animationRunning.get()) {
-            // Pause
             animationTimer.stop();
             animationRunning.set(false);
             playPauseButton.setText("Play");
         } else {
-            // Play
             updateAnimationSpeed();
             animationTimer.start();
             animationRunning.set(true);
@@ -516,9 +451,7 @@ public class Gui extends JFrame {
         }
     }
     
-    /**
-     * Stop the animation and reset to the beginning
-     */
+    // Memberhentikan animasi
     private void stopAnimation() {
         if (animationRunning.get()) {
             animationTimer.stop();
@@ -533,21 +466,15 @@ public class Gui extends JFrame {
         statusLabel.setText("Animation stopped");
     }
     
-    /**
-     * Step forward one move in the solution
-     */
     private void stepForward() {
         if (solutionSteps != null && currentStep < solutionSteps.size() - 1) {
             currentStep++;
             
-            // Check if we've reached the last step
             if (currentStep == solutionSteps.size() - 1) {
-                // First show the car at the exit
                 showingFinalState = true;
                 showExitAnimation = false;
                 updateBoardDisplay();
                 
-                // After a delay, show the exit animation
                 Timer exitAnimTimer = new Timer(800, e -> {
                     ((Timer)e.getSource()).stop();
                     showingFinalState = false;
@@ -566,18 +493,12 @@ public class Gui extends JFrame {
         }
     }
     
-    /**
-     * Update the animation speed based on the slider value
-     */
+    // Kecepatan animasi dgn slider
     private void updateAnimationSpeed() {
-        // Convert slider value (1-10) to delay in milliseconds (1000ms to 100ms)
         int delay = 1100 - (animationSpeedSlider.getValue() * 100);
         animationTimer.setDelay(delay);
     }
     
-    /**
-     * Update the board display with the current board state
-     */
     private void updateBoardDisplay() {
         if (currentBoard == null) {
             return;
@@ -586,35 +507,28 @@ public class Gui extends JFrame {
         boardPanel.repaint();
     }
     
-    /**
-     * Draw the board on the graphics context
-     */
+    // Gambar papan
     private void drawBoard(Graphics g) {
         if (currentBoard == null) {
             return;
         }
         
-        // Determine which board to draw
         Board boardToDraw = (solutionSteps != null && currentStep < solutionSteps.size()) ? 
                             solutionSteps.get(currentStep) : currentBoard;
         
-        // Get board dimensions
         int rows = boardToDraw.getRows();
         int cols = boardToDraw.getCols();
         
-        // Calculate cell size with extra padding to ensure exits are visible
         int cellSize = Math.min(
-            (boardPanel.getWidth() - 120) / cols,  // More horizontal padding (120px)
-            (boardPanel.getHeight() - 120) / rows  // More vertical padding (120px)
+            (boardPanel.getWidth() - 120) / cols,
+            (boardPanel.getHeight() - 120) / rows
         );
         
-        // Calculate board position (centered)
         int boardWidth = cols * cellSize;
         int boardHeight = rows * cellSize;
         int startX = (boardPanel.getWidth() - boardWidth) / 2;
         int startY = (boardPanel.getHeight() - boardHeight) / 2;
         
-        // Draw grid
         g.setColor(Color.LIGHT_GRAY);
         for (int r = 0; r <= rows; r++) {
             g.drawLine(startX, startY + r * cellSize, startX + cols * cellSize, startY + r * cellSize);
@@ -623,42 +537,32 @@ public class Gui extends JFrame {
             g.drawLine(startX + c * cellSize, startY, startX + c * cellSize, startY + rows * cellSize);
         }
         
-        // Draw exit marker with enhanced visibility
         int exitRow = boardToDraw.getExitRow();
         int exitCol = boardToDraw.getExitCol();
         
         g.setColor(Color.GREEN);
-        if (exitRow == -1) { // Top exit
-            // Make top exit more visible by making it larger
+        if (exitRow == -1) {
             g.fillRect(startX + exitCol * cellSize, startY - cellSize, cellSize, cellSize);
-            // Add a small triangle pointing up
             int[] xPoints = {startX + exitCol * cellSize + cellSize/2, startX + exitCol * cellSize + cellSize/4, startX + exitCol * cellSize + 3*cellSize/4};
             int[] yPoints = {startY - cellSize - 10, startY - cellSize, startY - cellSize};
             g.fillPolygon(xPoints, yPoints, 3);
-        } else if (exitRow == rows) { // Bottom exit
-            // Make bottom exit more visible by making it larger
+        } else if (exitRow == rows) {
             g.fillRect(startX + exitCol * cellSize, startY + rows * cellSize, cellSize, cellSize);
-            // Add a small triangle pointing down
             int[] xPoints = {startX + exitCol * cellSize + cellSize/2, startX + exitCol * cellSize + cellSize/4, startX + exitCol * cellSize + 3*cellSize/4};
             int[] yPoints = {startY + rows * cellSize + cellSize + 10, startY + rows * cellSize + cellSize, startY + rows * cellSize + cellSize};
             g.fillPolygon(xPoints, yPoints, 3);
-        } else if (exitCol == -1) { // Left exit
-            // Make left exit more visible by making it larger
+        } else if (exitCol == -1) {
             g.fillRect(startX - cellSize, startY + exitRow * cellSize, cellSize, cellSize);
-            // Add a small triangle pointing left
             int[] xPoints = {startX - cellSize - 10, startX - cellSize, startX - cellSize};
             int[] yPoints = {startY + exitRow * cellSize + cellSize/2, startY + exitRow * cellSize + cellSize/4, startY + exitRow * cellSize + 3*cellSize/4};
             g.fillPolygon(xPoints, yPoints, 3);
-        } else if (exitCol == cols) { // Right exit
-            // Make right exit more visible by making it larger
+        } else if (exitCol == cols) {
             g.fillRect(startX + cols * cellSize, startY + exitRow * cellSize, cellSize, cellSize);
-            // Add a small triangle pointing right
             int[] xPoints = {startX + cols * cellSize + cellSize + 10, startX + cols * cellSize + cellSize, startX + cols * cellSize + cellSize};
             int[] yPoints = {startY + exitRow * cellSize + cellSize/2, startY + exitRow * cellSize + cellSize/4, startY + exitRow * cellSize + 3*cellSize/4};
             g.fillPolygon(xPoints, yPoints, 3);
         }
         
-        // Draw pieces
         for (Piece piece : boardToDraw.getPieces()) {
             int row = piece.getRow();
             int col = piece.getCol();
@@ -666,50 +570,40 @@ public class Gui extends JFrame {
             boolean isVertical = piece.isVertical();
             char id = piece.getId();
             
-            // Skip drawing the primary piece only if showing exit animation and not showing final state
             if (showExitAnimation && !showingFinalState && id == 'P' && 
                 solutionSteps != null && currentStep == solutionSteps.size() - 1) {
                 System.out.println("Skipping primary piece (P) for vanishing effect!");
-                continue; // Skip the primary piece for vanishing effect
+                continue;
             }
             
-            // Get color for the piece
             Color pieceColor = getPieceColor(id);
             
-            // Check if this is the primary piece and if we're at the last step of the solution
             boolean isPrimary = (id == 'P');
             boolean isLastStep = (solutionSteps != null && currentStep == solutionSteps.size() - 1);
             
-            // Determine if the primary piece should appear to be exiting (only during final state, not during vanish)
             boolean showExiting = isPrimary && isLastStep && showingFinalState;
-            int exitingOffset = cellSize / 3;  // Distance to move the piece toward the exit
+            int exitingOffset = cellSize / 3;
             
-            // Draw the piece, possibly with exiting effect
             g.setColor(pieceColor);
             if (isVertical) {
                 if (showExiting) {
-                    // For vertical pieces, adjust based on exit direction
                     if (exitCol == -1) {
-                        // Left exit - shift piece left and reduce visible length
                         g.fillRect(startX + col * cellSize - exitingOffset + 2, 
                                 startY + row * cellSize + 2, 
                                 cellSize - 4, 
                                 length * cellSize - 4);
                     } else if (exitCol == cols) {
-                        // Right exit - shift piece right and reduce visible length
                         g.fillRect(startX + col * cellSize + exitingOffset + 2, 
                                 startY + row * cellSize + 2, 
                                 cellSize - 4, 
                                 length * cellSize - 4);
                     } else {
-                        // Normal drawing
                         g.fillRect(startX + col * cellSize + 2, 
                                 startY + row * cellSize + 2, 
                                 cellSize - 4, 
                                 length * cellSize - 4);
                     }
                 } else {
-                    // Normal drawing
                     g.fillRect(startX + col * cellSize + 2, 
                             startY + row * cellSize + 2, 
                             cellSize - 4, 
@@ -717,40 +611,33 @@ public class Gui extends JFrame {
                 }
             } else {
                 if (showExiting) {
-                    // For horizontal pieces, adjust based on exit direction
                     if (exitRow == -1) {
-                        // Top exit - shift piece up and reduce visible length
                         g.fillRect(startX + col * cellSize + 2, 
                                 startY + row * cellSize - exitingOffset + 2, 
                                 length * cellSize - 4, 
                                 cellSize - 4);
                     } else if (exitRow == rows) {
-                        // Bottom exit - shift piece down and reduce visible length
                         g.fillRect(startX + col * cellSize + 2, 
                                 startY + row * cellSize + exitingOffset + 2, 
                                 length * cellSize - 4, 
                                 cellSize - 4);
                     } else if (exitCol == -1) {
-                        // Left exit - shift piece left
                         g.fillRect(startX + col * cellSize - exitingOffset + 2, 
                                 startY + row * cellSize + 2, 
                                 length * cellSize - 4, 
                                 cellSize - 4);
                     } else if (exitCol == cols) {
-                        // Right exit - shift piece right
                         g.fillRect(startX + col * cellSize + exitingOffset + 2, 
                                 startY + row * cellSize + 2, 
                                 length * cellSize - 4, 
                                 cellSize - 4);
                     } else {
-                        // Normal drawing
                         g.fillRect(startX + col * cellSize + 2, 
                                 startY + row * cellSize + 2, 
                                 length * cellSize - 4, 
                                 cellSize - 4);
                     }
                 } else {
-                    // Normal drawing
                     g.fillRect(startX + col * cellSize + 2, 
                             startY + row * cellSize + 2, 
                             length * cellSize - 4, 
@@ -758,7 +645,6 @@ public class Gui extends JFrame {
                 }
             }
             
-            // Draw piece ID
             g.setColor(Color.BLACK);
             Font font = new Font("Arial", Font.BOLD, cellSize / 3);
             g.setFont(font);
@@ -767,7 +653,6 @@ public class Gui extends JFrame {
             FontMetrics metrics = g.getFontMetrics(font);
             int textX, textY;
             
-            // Position the text, accounting for exit animation
             if (isVertical) {
                 if (showExiting) {
                     if (exitCol == -1) {
@@ -803,7 +688,6 @@ public class Gui extends JFrame {
             g.drawString(text, textX, textY);
         }
         
-        // Highlight moved piece if we're showing a solution
         if (solutionSteps != null && currentStep > 0 && currentStep < solutionMoves.size() + 1 && !showExitAnimation) {
             Move lastMove = solutionMoves.get(currentStep - 1);
             int pieceIndex = lastMove.getPieceIndex();
@@ -814,7 +698,6 @@ public class Gui extends JFrame {
             int length = movedPiece.getLength();
             boolean isVertical = movedPiece.isVertical();
             
-            // Draw highlight border around the moved piece
             g.setColor(Color.YELLOW);
             Graphics2D g2d = (Graphics2D) g;
             g2d.setStroke(new BasicStroke(3));
@@ -829,16 +712,11 @@ public class Gui extends JFrame {
         }
     }
     
-    /**
-     * Get the color for a piece
-     */
     private Color getPieceColor(char id) {
-        // Primary piece is always red
         if (id == 'P') {
             return Color.RED;
         }
         
-        // Get or create a color for this piece
         if (!pieceColors.containsKey(id)) {
             pieceColors.put(id, generatePastelColor());
         }
@@ -846,28 +724,20 @@ public class Gui extends JFrame {
         return pieceColors.get(id);
     }
     
-    /**
-     * Generate a random pastel color
-     */
     private Color generatePastelColor() {
         float hue = (float) Math.random();
-        float saturation = 0.5f; // Pastels have lower saturation
-        float brightness = 0.9f; // Pastels are bright
+        float saturation = 0.5f;
+        float brightness = 0.9f;
         
         return Color.getHSBColor(hue, saturation, brightness);
     }
     
-    /**
-     * Assign colors to all pieces in the board
-     */
     private void assignColorsToNewPieces() {
-        pieceColors.clear(); // Clear previous colors
+        pieceColors.clear();
         
-        // Assign a color to each piece
         for (Piece piece : currentBoard.getPieces()) {
             char id = piece.getId();
             
-            // Primary piece is always red
             if (id == 'P') {
                 pieceColors.put(id, Color.RED);
             } else {
@@ -876,9 +746,6 @@ public class Gui extends JFrame {
         }
     }
     
-    /**
-     * Extract moves from a list of boards
-     */
     private List<Move> extractMoves(List<Board> steps) {
         List<Move> moves = new ArrayList<>();
         
@@ -890,7 +757,6 @@ public class Gui extends JFrame {
             Board prev = steps.get(i-1);
             Board curr = steps.get(i);
             
-            // Find the moved piece
             List<Piece> prevPieces = prev.getPieces();
             List<Piece> currPieces = curr.getPieces();
             
@@ -900,7 +766,6 @@ public class Gui extends JFrame {
                 
                 if (prevPiece.getRow() != currPiece.getRow() || 
                     prevPiece.getCol() != currPiece.getCol()) {
-                    // Found the moved piece
                     Move move = new Move(
                         j, 
                         prevPiece.getRow(), 
@@ -917,14 +782,11 @@ public class Gui extends JFrame {
         return moves;
     }
     
-    /**
-     * Inner class to collect the solution steps from the algorithms
-     */
     public static class SolutionCollector {
         private List<Board> solutionSteps = new ArrayList<>();
         
         public void addStep(Board board) {
-            solutionSteps.add(new Board(board)); // Make a copy
+            solutionSteps.add(new Board(board));
         }
         
         public List<Board> getSolutionSteps() {
@@ -932,94 +794,14 @@ public class Gui extends JFrame {
         }
     }
     
-    /**
-     * UCS implementation that collects solution steps for GUI
-     */
-    private static class UCSForGUI extends UCS {
-        private SolutionCollector collector;
-        private int nodesVisited;
-        
-        public UCSForGUI(SolutionCollector collector) {
-            super(collector);
-            this.collector = collector;
-        }
-        
-        public int getNodesVisited() {
-            return nodesVisited;
-        }
-        
-        // You'll need to modify UCS to track nodes visited and pass the collector
-    }
-    
-    /**
-     * GBFS implementation that collects solution steps for GUI
-     */
-    private static class GBFSForGUI extends GBFS {
-        private SolutionCollector collector;
-        private int nodesVisited;
-        
-        public GBFSForGUI(int heuristicType, SolutionCollector collector) {
-            super(heuristicType, collector);
-            this.collector = collector;
-        }
-        
-        public int getNodesVisited() {
-            return nodesVisited;
-        }
-        
-        // You'll need to modify GBFS to track nodes visited and pass the collector
-    }
-    
-    /**
-     * A* implementation that collects solution steps for GUI
-     */
-    private static class AStarForGUI extends AStar {
-        private SolutionCollector collector;
-        private int nodesVisited;
-        
-        public AStarForGUI(int heuristicType, SolutionCollector collector) {
-            super(heuristicType, collector);
-            this.collector = collector;
-        }
-        
-        public int getNodesVisited() {
-            return nodesVisited;
-        }
-        
-        // You'll need to modify AStar to track nodes visited and pass the collector
-    }
-    
-    /**
-     * IDA* implementation that collects solution steps for GUI
-     */
-    private static class IDAStarForGUI extends IDAStar {
-        private SolutionCollector collector;
-        private int nodesVisited;
-        
-        public IDAStarForGUI(int heuristicType, SolutionCollector collector) {
-            super(heuristicType, collector);
-            this.collector = collector;
-        }
-        
-        public int getNodesVisited() {
-            return nodesVisited;
-        }
-        
-        // You'll need to modify IDAStar to track nodes visited and pass the collector
-    }
-    
-    /**
-     * Main method to start the GUI
-     */
+    // Gui starter
     public static void main(String[] args) {
-        // Set look and feel to system default
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             e.printStackTrace();
         }
         
-        // Create and display the GUI
         SwingUtilities.invokeLater(() -> new Gui());
     }
 }

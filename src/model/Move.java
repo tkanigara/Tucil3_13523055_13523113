@@ -1,24 +1,14 @@
 package model;
 
-/**
- * Represents a move in the Rush Hour puzzle.
- */
+/* Kelas sebagai representasi move */
 public class Move {
-    private int pieceIndex;     // Index of the piece being moved
-    private int targetRow;      // Target row position
-    private int targetCol;      // Target column position
-    private int fromRow;        // Starting row position
-    private int fromCol;        // Starting column position
+    private int pieceIndex;     
+    private int targetRow;      
+    private int targetCol;      
+    private int fromRow;        
+    private int fromCol;        
     
-    /**
-     * Create a new move
-     * 
-     * @param pieceIndex Index of the piece to move
-     * @param fromRow    Starting row position
-     * @param fromCol    Starting column position
-     * @param targetRow  Target row position
-     * @param targetCol  Target column position
-     */
+    /* Konstruktor move */
     public Move(int pieceIndex, int fromRow, int fromCol, int targetRow, int targetCol) {
         this.pieceIndex = pieceIndex;
         this.fromRow = fromRow;
@@ -27,12 +17,6 @@ public class Move {
         this.targetCol = targetCol;
     }
     
-    /**
-     * Get the movement direction (for display)
-     * 
-     * @param isVertical Whether the piece is vertical
-     * @return String description of the direction
-     */
     public String getDirection(boolean isVertical) {
         if (isVertical) {
             if (targetRow < fromRow) {
@@ -49,12 +33,6 @@ public class Move {
         }
     }
     
-    /**
-     * Get the magnitude of displacement
-     * 
-     * @param isVertical Whether the piece is vertical
-     * @return The number of cells moved
-     */
     public int getDistance(boolean isVertical) {
         if (isVertical) {
             return Math.abs(targetRow - fromRow);

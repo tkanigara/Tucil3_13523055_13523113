@@ -8,7 +8,7 @@ public class Main {
     public static void main(String[] args) {
 
         if (args.length > 0 && args[0].equalsIgnoreCase("--gui")) {
-            // Launch GUI
+            // buat launch GUI
             javax.swing.SwingUtilities.invokeLater(() -> new Gui());
             return;
         }
@@ -18,30 +18,29 @@ public class Main {
         System.out.println("Rush Hour Puzzle Solver");
         System.out.println("======================");
         
-        // Get the input file path
+        // Input path kalau CLI
         System.out.print("Enter the path to the input file: ");
         String filePath = scanner.nextLine();
         
         try {
-            // Parse the input file
+            // Parse input
             FileParser parser = new FileParser();
             Board initialBoard = parser.parseFile(filePath);
             
-            // Choose the algorithm
+            // Pilih algoritma
             System.out.println("\nChoose the algorithm:");
             System.out.println("1. Uniform Cost Search (UCS)");
             System.out.println("2. Greedy Best-First Search (GBFS)");
             System.out.println("3. A* Search");
             System.out.println("4. IDA* Search");
-            System.out.print("Enter your choice (1): ");
+            System.out.print("Enter your choice: ");
             int choice = 1;
             String input = scanner.nextLine();
             if (!input.isEmpty()) {
                 choice = Integer.parseInt(input);
             }
 
-            // If GBFS or A* is chosen, ask for the heuristic
-            int heuristicChoice = 1; // Default to blocking pieces heuristic
+            int heuristicChoice = 1; // default
             if (choice == 2 || choice == 3 || choice == 4) {
                 System.out.println("\nChoose the heuristic:");
                 System.out.println("1. Blocking Pieces (count blocking vehicles)");
