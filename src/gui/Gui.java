@@ -5,6 +5,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +26,7 @@ public class Gui extends JFrame {
     private JButton loadButton;
     private JButton solveButton;
     private JButton createBoardButton;
+    private JButton saveButton; // New save button
     private JComboBox<String> algorithmSelector;
     private JComboBox<String> heuristicSelector;
     private JLabel statusLabel;
@@ -38,16 +42,17 @@ public class Gui extends JFrame {
     private int currentStep = 0;
     private Timer animationTimer;
     private AtomicBoolean animationRunning = new AtomicBoolean(false);
+    
+    // Animation states for vanishing effect
     private boolean showExitAnimation = false;
     private boolean showingFinalState = false;
     
+    // Performance metrics
+    private int nodesVisited = 0;
+    private double executionTime = 0;
+    
     // Colors for different pieces
     private Map<Character, Color> pieceColors = new HashMap<>();
-
-    // Performance statistic
-    private JLabel performanceLabel;
-    private int nodesVisited = 0;
-    private long executionTime = 0;
     
     /**
      * Constructor - initialize the GUI
@@ -71,7 +76,6 @@ public class Gui extends JFrame {
                 
                 // Check if we've reached the final step
                 if (currentStep == solutionSteps.size() - 1) {
-                    System.out.println("REACHED FINAL STEP - SHOWING CAR AT EXIT");
                     showingFinalState = true;
                     showExitAnimation = false;
                     updateBoardDisplay();
@@ -79,7 +83,6 @@ public class Gui extends JFrame {
                     // After a delay, show the exit animation where car vanishes
                     Timer exitAnimationTimer = new Timer(800, evt -> {
                         ((Timer)evt.getSource()).stop();
-                        System.out.println("NOW ACTIVATING EXIT ANIMATION");
                         showingFinalState = false;
                         showExitAnimation = true;
                         updateBoardDisplay();
@@ -127,8 +130,13 @@ public class Gui extends JFrame {
         createBoardButton = new JButton("Create Puzzle");
         createBoardButton.addActionListener(e -> openBoardEditor());
         
+        saveButton = new JButton("Save Solution");
+        saveButton.addActionListener(e -> saveSolutionToFile());
+        saveButton.setEnabled(false); // Initially disabled until we have a solution
+        
         filePanel.add(loadButton);
         filePanel.add(createBoardButton);
+        filePanel.add(saveButton);
         
         // Algorithm selection
         JPanel algoPanel = new JPanel();
@@ -179,7 +187,8 @@ public class Gui extends JFrame {
                 drawBoard(g);
             }
         };
-        boardPanel.setPreferredSize(new Dimension(500, 500));
+        // Increase the preferred size to ensure there's room for the exits
+        boardPanel.setPreferredSize(new Dimension(600, 600));
         boardPanel.setBackground(Color.WHITE);
         
         add(boardPanel, BorderLayout.CENTER);
@@ -193,51 +202,42 @@ public class Gui extends JFrame {
         
         // Animation controls
         JPanel controlPanel = new JPanel();
-        JLabel speedLabel = new JLabel("Animation Speed:");
+        playPauseButton = new JButton("Play");
+        playPauseButton.addActionListener(e -> togglePlayPause());
+        playPauseButton.setEnabled(false);
+        
+        stopButton = new JButton("Stop");
+        stopButton.addActionListener(e -> stopAnimation());
+        stopButton.setEnabled(false);
+        
+        stepButton = new JButton("Step");
+        stepButton.addActionListener(e -> stepForward());
+        stepButton.setEnabled(false);
+        
         animationSpeedSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 5);
-        animationSpeedSlider.setPaintTicks(true);
         animationSpeedSlider.setMajorTickSpacing(1);
+        animationSpeedSlider.setPaintTicks(true);
+        animationSpeedSlider.setPaintLabels(true);
+        animationSpeedSlider.setSnapToTicks(true);
         animationSpeedSlider.addChangeListener(e -> {
             if (!animationSpeedSlider.getValueIsAdjusting()) {
                 updateAnimationSpeed();
             }
         });
         
-        playPauseButton = new JButton("Play");
-        playPauseButton.addActionListener(e -> togglePlayPause());
-        playPauseButton.setEnabled(false);
-        
-        stepButton = new JButton("Step");
-        stepButton.addActionListener(e -> stepForward());
-        stepButton.setEnabled(false);
-        
-        stopButton = new JButton("Stop");
-        stopButton.addActionListener(e -> stopAnimation());
-        stopButton.setEnabled(false);
-        
-        controlPanel.add(speedLabel);
+        controlPanel.add(new JLabel("Speed:"));
         controlPanel.add(animationSpeedSlider);
         controlPanel.add(playPauseButton);
         controlPanel.add(stepButton);
         controlPanel.add(stopButton);
-        
-        // Performance metrics panel
-        JPanel performancePanel = new JPanel();
-        performanceLabel = new JLabel("Nodes visited: - | Execution time: - ms");
-        performancePanel.add(performanceLabel);
         
         // Status label
         statusLabel = new JLabel("Ready to load or create a puzzle");
         JPanel statusPanel = new JPanel();
         statusPanel.add(statusLabel);
         
-        // Add both panels to the bottom
-        JPanel infoPanel = new JPanel(new GridLayout(2, 1));
-        infoPanel.add(performancePanel);
-        infoPanel.add(statusPanel);
-        
         bottomPanel.add(controlPanel, BorderLayout.CENTER);
-        bottomPanel.add(infoPanel, BorderLayout.SOUTH);
+        bottomPanel.add(statusPanel, BorderLayout.SOUTH);
         
         add(bottomPanel, BorderLayout.SOUTH);
     }
@@ -247,7 +247,7 @@ public class Gui extends JFrame {
      */
     private void loadPuzzleFromFile() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("test")); // Set initial directory to test folder
+        fileChooser.setCurrentDirectory(new File("test/input")); // Set initial directory to test folder
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
         
         int result = fileChooser.showOpenDialog(this);
@@ -270,23 +270,37 @@ public class Gui extends JFrame {
                 playPauseButton.setEnabled(false);
                 stopButton.setEnabled(false);
                 stepButton.setEnabled(false);
-                
-                // Reset performance metrics
-                performanceLabel.setText("Nodes visited: - | Execution time: - ms");
+                saveButton.setEnabled(false);
                 
                 statusLabel.setText("Puzzle loaded from " + selectedFile.getName());
                 
                 // Assign colors to pieces
                 assignColorsToNewPieces();
                 
+            } catch (IOException ex) {
+                // File read error
+                showErrorDialog("File Error", 
+                    "Could not read the file: " + ex.getMessage());
+            } catch (IllegalArgumentException ex) {
+                // File format error
+                showErrorDialog("File Format Error", ex.getMessage());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, 
-                    "Error loading file: " + ex.getMessage(), 
-                    "Load Error", 
-                    JOptionPane.ERROR_MESSAGE);
+                // Unexpected error
+                showErrorDialog("Unexpected Error", 
+                    "An unexpected error occurred: " + ex.getMessage());
                 ex.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Display an error dialog with a detailed message
+     */
+    private void showErrorDialog(String title, String message) {
+        JOptionPane.showMessageDialog(this, 
+            message, 
+            title, 
+            JOptionPane.ERROR_MESSAGE);
     }
     
     /**
@@ -298,90 +312,162 @@ public class Gui extends JFrame {
     }
     
     /**
-     * Solve the puzzle using the selected algorithm
+     * Save the solution steps to a text file
      */
-    private void solvePuzzle() {
-        if (currentBoard == null) {
+    private void saveSolutionToFile() {
+        if (solutionSteps == null || solutionSteps.size() <= 1) {
+            JOptionPane.showMessageDialog(this,
+                "No solution to save.",
+                "Save Error",
+                JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        // Get selected algorithm and heuristic
-        int algorithmIndex = algorithmSelector.getSelectedIndex();
-        int heuristicIndex = heuristicSelector.getSelectedIndex() + 1; // 1-based for the algorithm classes
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File("test/output")); // Set initial directory to output folder
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
         
-        // Set cursor to wait
-        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        solveButton.setEnabled(false);
-        statusLabel.setText("Solving puzzle...");
-        
-        // Run solver in background thread
-        new SwingWorker<SolverResult, Void>() {
-            @Override
-            protected SolverResult doInBackground() throws Exception {
-                SolutionCollector collector = new SolutionCollector();
-                SolverResult result = new SolverResult();
+        int result = fileChooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            
+            // Add .txt extension if not present
+            if (!selectedFile.getName().toLowerCase().endsWith(".txt")) {
+                selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
+            }
+            
+            try (PrintWriter writer = new PrintWriter(new FileWriter(selectedFile))) {
+                // Write header
+                writer.println("Rush Hour Puzzle Solution");
+                writer.println("========================");
+                writer.println("Algorithm: " + algorithmSelector.getSelectedItem());
+                if (algorithmSelector.getSelectedIndex() != 0) { // Not UCS
+                    writer.println("Heuristic: " + heuristicSelector.getSelectedItem());
+                }
+                writer.println("Total steps: " + (solutionSteps.size() - 1));
+                writer.println("Nodes visited: " + nodesVisited);
+                writer.println("Execution time: " + executionTime + " seconds");
+                writer.println();
                 
-                long startTime = System.currentTimeMillis();
+                // Write initial state
+                writer.println("Initial Board:");
+                writer.println(solutionSteps.get(0).toString());
+                writer.println();
                 
-                switch (algorithmIndex) {
-                    case 0: // UCS
-                        UCS ucs = new UCSForGUI(collector);
-                        ucs.solve(currentBoard);
-                        result.nodesVisited = ucs.getNodesVisited();
-                        break;
-                    case 1: // GBFS
-                        GBFS gbfs = new GBFSForGUI(heuristicIndex, collector);
-                        gbfs.solve(currentBoard);
-                        result.nodesVisited = gbfs.getNodesVisited();
-                        break;
-                    case 2: // A*
-                        AStar aStar = new AStarForGUI(heuristicIndex, collector);
-                        aStar.solve(currentBoard);
-                        result.nodesVisited = aStar.getNodesVisited();
-                        break;
-                    case 3: // IDA*
-                        IDAStar idaStar = new IDAStarForGUI(heuristicIndex, collector);
-                        idaStar.solve(currentBoard);
-                        result.nodesVisited = idaStar.getNodesVisited();
-                        break;
+                // Write each step
+                for (int i = 1; i < solutionSteps.size(); i++) {
+                    Move move = solutionMoves.get(i-1);
+                    Board board = solutionSteps.get(i);
+                    Piece piece = board.getPieces().get(move.getPieceIndex());
+                    char pieceId = piece.getId();
+                    
+                    String direction = move.getDirection(piece.isVertical());
+                    int distance = move.getDistance(piece.isVertical());
+                    
+                    writer.println("Step " + i + ": Move piece " + pieceId + 
+                                  " " + distance + " cell(s) " + direction);
+                    writer.println(board.toString());
+                    writer.println();
                 }
                 
-                result.executionTime = System.currentTimeMillis() - startTime;
-                result.solutionSteps = collector.getSolutionSteps();
-                
-                return result;
+                statusLabel.setText("Solution saved to " + selectedFile.getName());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Error saving file: " + ex.getMessage(), 
+                    "Save Error", 
+                    JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
             }
+        }
+    }
+    
+    /**
+     * Solve the puzzle using the selected algorithm
+     */
+    private void solvePuzzle() {
+    if (currentBoard == null) {
+        return;
+    }
+    
+    // Get selected algorithm and heuristic
+    int algorithmIndex = algorithmSelector.getSelectedIndex();
+    int heuristicIndex = heuristicSelector.getSelectedIndex() + 1; // 1-based for the algorithm classes
+    
+    // Reset solution data
+    solutionSteps = null;
+    solutionMoves = null;
+    currentStep = 0;
+    nodesVisited = 0;
+    executionTime = 0;
+    showExitAnimation = false;
+    showingFinalState = false;
+    
+    // Set cursor to wait
+    setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    solveButton.setEnabled(false);
+    statusLabel.setText("Solving puzzle...");
+    
+    // Run solver in background thread
+    new SwingWorker<List<Board>, Void>() {
+        @Override
+        protected List<Board> doInBackground() throws Exception {
+            SolutionCollector collector = new SolutionCollector();
+            
+            long startTime = System.currentTimeMillis();
+            
+            switch (algorithmIndex) {
+                case 0: // UCS
+                    UCS ucs = new UCS(collector);
+                    ucs.solve(currentBoard);
+                    nodesVisited = ucs.getNodesVisited();
+                    break;
+                case 1: // GBFS
+                    GBFS gbfs = new GBFS(heuristicIndex, collector);
+                    gbfs.solve(currentBoard);
+                    nodesVisited = gbfs.getNodesVisited();
+                    break;
+                case 2: // A*
+                    AStar aStar = new AStar(heuristicIndex, collector);
+                    aStar.solve(currentBoard);
+                    nodesVisited = aStar.getNodesVisited();
+                    break;
+                case 3: // IDA*
+                    IDAStar idaStar = new IDAStar(heuristicIndex, collector);
+                    idaStar.solve(currentBoard);
+                    nodesVisited = idaStar.getNodesVisited();
+                    break;
+            }
+            
+            long endTime = System.currentTimeMillis();
+            executionTime = (endTime - startTime) / 1000.0;
+            
+            return collector.getSolutionSteps();
+        }
             
             @Override
             protected void done() {
                 try {
-                    SolverResult result = get();
-                    solutionSteps = result.solutionSteps;
-                    solutionMoves = extractMoves(solutionSteps);
+                    solutionSteps = get();
                     
-                    // Store and display performance metrics
-                    nodesVisited = result.nodesVisited;
-                    executionTime = result.executionTime;
-                    performanceLabel.setText(String.format(
-                        "Nodes visited: %d | Execution time: %d ms", 
-                        nodesVisited, 
-                        executionTime
-                    ));
-                    
-                    if (solutionSteps != null && !solutionSteps.isEmpty()) {
+                    if (solutionSteps != null && solutionSteps.size() > 1) {
+                        solutionMoves = extractMoves(solutionSteps);
                         currentStep = 0;
-                        showExitAnimation = false;
-                        showingFinalState = false;
                         updateBoardDisplay();
                         
                         // Enable animation controls
                         playPauseButton.setEnabled(true);
                         stopButton.setEnabled(true);
                         stepButton.setEnabled(true);
+                        saveButton.setEnabled(true);
                         
-                        statusLabel.setText("Solution found in " + (solutionSteps.size() - 1) + " steps!");
+                        String algorithmName = (String) algorithmSelector.getSelectedItem();
+                        statusLabel.setText("Solution found in " + (solutionSteps.size() - 1) + 
+                                           " steps using " + algorithmName + 
+                                           " | Nodes visited: " + nodesVisited + 
+                                           " | Time: " + executionTime + " sec");
                     } else {
                         statusLabel.setText("No solution found!");
+                        saveButton.setEnabled(false);
                     }
                     
                 } catch (Exception ex) {
@@ -404,7 +490,7 @@ public class Gui extends JFrame {
      * Toggle between play and pause for animation
      */
     private void togglePlayPause() {
-        if (solutionSteps == null) {
+        if (solutionSteps == null || solutionSteps.size() <= 1) {
             return;
         }
         
@@ -497,26 +583,13 @@ public class Gui extends JFrame {
             return;
         }
         
-        // If we have a solution, show the current step
-        if (solutionSteps != null && currentStep < solutionSteps.size()) {
-            boardPanel.repaint();
-        } else {
-            // Otherwise show the current board
-            boardPanel.repaint();
-        }
+        boardPanel.repaint();
     }
     
     /**
      * Draw the board on the graphics context
      */
     private void drawBoard(Graphics g) {
-        if (showExitAnimation) {
-            System.out.println("Exit animation is active!");
-        }
-        if (showingFinalState) {
-            System.out.println("Showing final state with car at exit!");
-        }
-
         if (currentBoard == null) {
             return;
         }
@@ -529,8 +602,11 @@ public class Gui extends JFrame {
         int rows = boardToDraw.getRows();
         int cols = boardToDraw.getCols();
         
-        // Calculate cell size
-        int cellSize = Math.min(boardPanel.getWidth() / cols, boardPanel.getHeight() / rows);
+        // Calculate cell size with extra padding to ensure exits are visible
+        int cellSize = Math.min(
+            (boardPanel.getWidth() - 120) / cols,  // More horizontal padding (120px)
+            (boardPanel.getHeight() - 120) / rows  // More vertical padding (120px)
+        );
         
         // Calculate board position (centered)
         int boardWidth = cols * cellSize;
@@ -547,19 +623,39 @@ public class Gui extends JFrame {
             g.drawLine(startX + c * cellSize, startY, startX + c * cellSize, startY + rows * cellSize);
         }
         
-        // Draw exit marker
+        // Draw exit marker with enhanced visibility
         int exitRow = boardToDraw.getExitRow();
         int exitCol = boardToDraw.getExitCol();
         
         g.setColor(Color.GREEN);
         if (exitRow == -1) { // Top exit
-            g.fillRect(startX + exitCol * cellSize, startY - cellSize/2, cellSize, cellSize/2);
+            // Make top exit more visible by making it larger
+            g.fillRect(startX + exitCol * cellSize, startY - cellSize, cellSize, cellSize);
+            // Add a small triangle pointing up
+            int[] xPoints = {startX + exitCol * cellSize + cellSize/2, startX + exitCol * cellSize + cellSize/4, startX + exitCol * cellSize + 3*cellSize/4};
+            int[] yPoints = {startY - cellSize - 10, startY - cellSize, startY - cellSize};
+            g.fillPolygon(xPoints, yPoints, 3);
         } else if (exitRow == rows) { // Bottom exit
-            g.fillRect(startX + exitCol * cellSize, startY + rows * cellSize, cellSize, cellSize/2);
+            // Make bottom exit more visible by making it larger
+            g.fillRect(startX + exitCol * cellSize, startY + rows * cellSize, cellSize, cellSize);
+            // Add a small triangle pointing down
+            int[] xPoints = {startX + exitCol * cellSize + cellSize/2, startX + exitCol * cellSize + cellSize/4, startX + exitCol * cellSize + 3*cellSize/4};
+            int[] yPoints = {startY + rows * cellSize + cellSize + 10, startY + rows * cellSize + cellSize, startY + rows * cellSize + cellSize};
+            g.fillPolygon(xPoints, yPoints, 3);
         } else if (exitCol == -1) { // Left exit
-            g.fillRect(startX - cellSize/2, startY + exitRow * cellSize, cellSize/2, cellSize);
+            // Make left exit more visible by making it larger
+            g.fillRect(startX - cellSize, startY + exitRow * cellSize, cellSize, cellSize);
+            // Add a small triangle pointing left
+            int[] xPoints = {startX - cellSize - 10, startX - cellSize, startX - cellSize};
+            int[] yPoints = {startY + exitRow * cellSize + cellSize/2, startY + exitRow * cellSize + cellSize/4, startY + exitRow * cellSize + 3*cellSize/4};
+            g.fillPolygon(xPoints, yPoints, 3);
         } else if (exitCol == cols) { // Right exit
-            g.fillRect(startX + cols * cellSize, startY + exitRow * cellSize, cellSize/2, cellSize);
+            // Make right exit more visible by making it larger
+            g.fillRect(startX + cols * cellSize, startY + exitRow * cellSize, cellSize, cellSize);
+            // Add a small triangle pointing right
+            int[] xPoints = {startX + cols * cellSize + cellSize + 10, startX + cols * cellSize + cellSize, startX + cols * cellSize + cellSize};
+            int[] yPoints = {startY + exitRow * cellSize + cellSize/2, startY + exitRow * cellSize + cellSize/4, startY + exitRow * cellSize + 3*cellSize/4};
+            g.fillPolygon(xPoints, yPoints, 3);
         }
         
         // Draw pieces
@@ -580,14 +676,86 @@ public class Gui extends JFrame {
             // Get color for the piece
             Color pieceColor = getPieceColor(id);
             
-            // Draw the piece
+            // Check if this is the primary piece and if we're at the last step of the solution
+            boolean isPrimary = (id == 'P');
+            boolean isLastStep = (solutionSteps != null && currentStep == solutionSteps.size() - 1);
+            
+            // Determine if the primary piece should appear to be exiting (only during final state, not during vanish)
+            boolean showExiting = isPrimary && isLastStep && showingFinalState;
+            int exitingOffset = cellSize / 3;  // Distance to move the piece toward the exit
+            
+            // Draw the piece, possibly with exiting effect
             g.setColor(pieceColor);
             if (isVertical) {
-                g.fillRect(startX + col * cellSize + 2, startY + row * cellSize + 2, 
-                        cellSize - 4, length * cellSize - 4);
+                if (showExiting) {
+                    // For vertical pieces, adjust based on exit direction
+                    if (exitCol == -1) {
+                        // Left exit - shift piece left and reduce visible length
+                        g.fillRect(startX + col * cellSize - exitingOffset + 2, 
+                                startY + row * cellSize + 2, 
+                                cellSize - 4, 
+                                length * cellSize - 4);
+                    } else if (exitCol == cols) {
+                        // Right exit - shift piece right and reduce visible length
+                        g.fillRect(startX + col * cellSize + exitingOffset + 2, 
+                                startY + row * cellSize + 2, 
+                                cellSize - 4, 
+                                length * cellSize - 4);
+                    } else {
+                        // Normal drawing
+                        g.fillRect(startX + col * cellSize + 2, 
+                                startY + row * cellSize + 2, 
+                                cellSize - 4, 
+                                length * cellSize - 4);
+                    }
+                } else {
+                    // Normal drawing
+                    g.fillRect(startX + col * cellSize + 2, 
+                            startY + row * cellSize + 2, 
+                            cellSize - 4, 
+                            length * cellSize - 4);
+                }
             } else {
-                g.fillRect(startX + col * cellSize + 2, startY + row * cellSize + 2, 
-                        length * cellSize - 4, cellSize - 4);
+                if (showExiting) {
+                    // For horizontal pieces, adjust based on exit direction
+                    if (exitRow == -1) {
+                        // Top exit - shift piece up and reduce visible length
+                        g.fillRect(startX + col * cellSize + 2, 
+                                startY + row * cellSize - exitingOffset + 2, 
+                                length * cellSize - 4, 
+                                cellSize - 4);
+                    } else if (exitRow == rows) {
+                        // Bottom exit - shift piece down and reduce visible length
+                        g.fillRect(startX + col * cellSize + 2, 
+                                startY + row * cellSize + exitingOffset + 2, 
+                                length * cellSize - 4, 
+                                cellSize - 4);
+                    } else if (exitCol == -1) {
+                        // Left exit - shift piece left
+                        g.fillRect(startX + col * cellSize - exitingOffset + 2, 
+                                startY + row * cellSize + 2, 
+                                length * cellSize - 4, 
+                                cellSize - 4);
+                    } else if (exitCol == cols) {
+                        // Right exit - shift piece right
+                        g.fillRect(startX + col * cellSize + exitingOffset + 2, 
+                                startY + row * cellSize + 2, 
+                                length * cellSize - 4, 
+                                cellSize - 4);
+                    } else {
+                        // Normal drawing
+                        g.fillRect(startX + col * cellSize + 2, 
+                                startY + row * cellSize + 2, 
+                                length * cellSize - 4, 
+                                cellSize - 4);
+                    }
+                } else {
+                    // Normal drawing
+                    g.fillRect(startX + col * cellSize + 2, 
+                            startY + row * cellSize + 2, 
+                            length * cellSize - 4, 
+                            cellSize - 4);
+                }
             }
             
             // Draw piece ID
@@ -599,15 +767,65 @@ public class Gui extends JFrame {
             FontMetrics metrics = g.getFontMetrics(font);
             int textX, textY;
             
+            // Position the text, accounting for exit animation
             if (isVertical) {
-                textX = startX + col * cellSize + (cellSize - metrics.stringWidth(text)) / 2;
-                textY = startY + row * cellSize + cellSize / 2;
+                if (showExiting) {
+                    if (exitCol == -1) {
+                        textX = startX + col * cellSize - exitingOffset + (cellSize - metrics.stringWidth(text)) / 2;
+                    } else if (exitCol == cols) {
+                        textX = startX + col * cellSize + exitingOffset + (cellSize - metrics.stringWidth(text)) / 2;
+                    } else {
+                        textX = startX + col * cellSize + (cellSize - metrics.stringWidth(text)) / 2;
+                    }
+                } else {
+                    textX = startX + col * cellSize + (cellSize - metrics.stringWidth(text)) / 2;
+                }
+                textY = startY + row * cellSize + cellSize / 2 + metrics.getAscent() / 2;
             } else {
                 textX = startX + col * cellSize + (cellSize - metrics.stringWidth(text)) / 2;
-                textY = startY + row * cellSize + (cellSize + metrics.getAscent()) / 2;
+                if (showExiting) {
+                    if (exitRow == -1) {
+                        textY = startY + row * cellSize - exitingOffset + (cellSize + metrics.getAscent()) / 2;
+                    } else if (exitRow == rows) {
+                        textY = startY + row * cellSize + exitingOffset + (cellSize + metrics.getAscent()) / 2;
+                    } else if (exitCol == -1) {
+                        textY = startY + row * cellSize + (cellSize + metrics.getAscent()) / 2;
+                    } else if (exitCol == cols) {
+                        textY = startY + row * cellSize + (cellSize + metrics.getAscent()) / 2;
+                    } else {
+                        textY = startY + row * cellSize + (cellSize + metrics.getAscent()) / 2;
+                    }
+                } else {
+                    textY = startY + row * cellSize + (cellSize + metrics.getAscent()) / 2;
+                }
             }
             
             g.drawString(text, textX, textY);
+        }
+        
+        // Highlight moved piece if we're showing a solution
+        if (solutionSteps != null && currentStep > 0 && currentStep < solutionMoves.size() + 1 && !showExitAnimation) {
+            Move lastMove = solutionMoves.get(currentStep - 1);
+            int pieceIndex = lastMove.getPieceIndex();
+            Piece movedPiece = boardToDraw.getPieces().get(pieceIndex);
+            
+            int row = movedPiece.getRow();
+            int col = movedPiece.getCol();
+            int length = movedPiece.getLength();
+            boolean isVertical = movedPiece.isVertical();
+            
+            // Draw highlight border around the moved piece
+            g.setColor(Color.YELLOW);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setStroke(new BasicStroke(3));
+            
+            if (isVertical) {
+                g2d.drawRect(startX + col * cellSize + 1, startY + row * cellSize + 1, 
+                            cellSize - 2, length * cellSize - 2);
+            } else {
+                g2d.drawRect(startX + col * cellSize + 1, startY + row * cellSize + 1, 
+                            length * cellSize - 2, cellSize - 2);
+            }
         }
     }
     
@@ -700,30 +918,6 @@ public class Gui extends JFrame {
     }
     
     /**
-     * Internal class to hold solver results
-     */
-    private static class SolverResult {
-        List<Board> solutionSteps;
-        int nodesVisited = 0;
-        long executionTime = 0;
-    }
-    
-    /**
-     * Main method to start the GUI
-     */
-    public static void main(String[] args) {
-        // Set look and feel to system default
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        // Create and display the GUI
-        SwingUtilities.invokeLater(() -> new Gui());
-    }
-    
-    /**
      * Inner class to collect the solution steps from the algorithms
      */
     public static class SolutionCollector {
@@ -742,35 +936,90 @@ public class Gui extends JFrame {
      * UCS implementation that collects solution steps for GUI
      */
     private static class UCSForGUI extends UCS {
+        private SolutionCollector collector;
+        private int nodesVisited;
+        
         public UCSForGUI(SolutionCollector collector) {
             super(collector);
+            this.collector = collector;
         }
+        
+        public int getNodesVisited() {
+            return nodesVisited;
+        }
+        
+        // You'll need to modify UCS to track nodes visited and pass the collector
     }
     
     /**
      * GBFS implementation that collects solution steps for GUI
      */
     private static class GBFSForGUI extends GBFS {
+        private SolutionCollector collector;
+        private int nodesVisited;
+        
         public GBFSForGUI(int heuristicType, SolutionCollector collector) {
             super(heuristicType, collector);
+            this.collector = collector;
         }
+        
+        public int getNodesVisited() {
+            return nodesVisited;
+        }
+        
+        // You'll need to modify GBFS to track nodes visited and pass the collector
     }
     
     /**
      * A* implementation that collects solution steps for GUI
      */
     private static class AStarForGUI extends AStar {
+        private SolutionCollector collector;
+        private int nodesVisited;
+        
         public AStarForGUI(int heuristicType, SolutionCollector collector) {
             super(heuristicType, collector);
+            this.collector = collector;
         }
+        
+        public int getNodesVisited() {
+            return nodesVisited;
+        }
+        
+        // You'll need to modify AStar to track nodes visited and pass the collector
     }
     
     /**
      * IDA* implementation that collects solution steps for GUI
      */
     private static class IDAStarForGUI extends IDAStar {
+        private SolutionCollector collector;
+        private int nodesVisited;
+        
         public IDAStarForGUI(int heuristicType, SolutionCollector collector) {
             super(heuristicType, collector);
+            this.collector = collector;
         }
+        
+        public int getNodesVisited() {
+            return nodesVisited;
+        }
+        
+        // You'll need to modify IDAStar to track nodes visited and pass the collector
+    }
+    
+    /**
+     * Main method to start the GUI
+     */
+    public static void main(String[] args) {
+        // Set look and feel to system default
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // Create and display the GUI
+        SwingUtilities.invokeLater(() -> new Gui());
     }
 }

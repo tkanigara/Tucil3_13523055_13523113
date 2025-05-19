@@ -334,7 +334,7 @@ public class BoardEditor extends JFrame {
         }
         
         // Show file save dialog
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser(new File("test/input"));
         fileChooser.setDialogTitle("Save Puzzle");
         fileChooser.setSelectedFile(new File("custom_puzzle.txt"));
         
@@ -376,8 +376,16 @@ public class BoardEditor extends JFrame {
         // Write board dimensions
         writer.write(rows + " " + cols + "\n");
         
-        // Write number of pieces
-        writer.write(placedPieces.size() + "\n");
+        // Count regular pieces (excluding primary piece)
+        int regularPieceCount = 0;
+        for (EditorPiece piece : placedPieces) {
+            if (piece.id != 'P') {
+                regularPieceCount++;
+            }
+        }
+        
+        // Write number of pieces - don't include the primary piece in the count
+        writer.write(regularPieceCount + "\n");
         
         // Create grid representation
         char[][] grid = new char[rows][cols];
@@ -402,11 +410,43 @@ public class BoardEditor extends JFrame {
         
         // Write grid with exit marker 'K'
         for (int r = 0; r < rows; r++) {
+            // Handle left exit on this row
+            if (exitRow == r && exitCol == -1) {
+                writer.write('K');
+            }
+            
+            // Write the row content
             for (int c = 0; c < cols; c++) {
                 writer.write(grid[r][c]);
             }
+            
+            // Handle right exit on this row
             if (exitRow == r && exitCol == cols) {
                 writer.write('K');
+            }
+            
+            writer.write("\n");
+        }
+        
+        // Handle top and bottom exits (these need to be written as separate rows)
+        if (exitRow == -1) { // Top exit
+            // Create a row of dots with K at the exit column
+            for (int c = 0; c < cols; c++) {
+                if (c == exitCol) {
+                    writer.write('K');
+                } else {
+                    writer.write('.');
+                }
+            }
+            writer.write("\n");
+        } else if (exitRow == rows) { // Bottom exit
+            // Create a row of dots with K at the exit column
+            for (int c = 0; c < cols; c++) {
+                if (c == exitCol) {
+                    writer.write('K');
+                } else {
+                    writer.write('.');
+                }
             }
             writer.write("\n");
         }

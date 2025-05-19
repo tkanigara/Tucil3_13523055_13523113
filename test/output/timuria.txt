@@ -1,0 +1,423 @@
+Rush Hour Puzzle Solution
+========================
+Algorithm: Uniform Cost Search (UCS)
+Total steps: 51
+Nodes visited: 0
+Execution time: 1.024 seconds
+
+Initial Board:
+ABB.E.
+ACD.EF
+ACDPPF
+GGGH.F
+..IHJJ
+LLIMM.
+
+Step 1: Move piece M 1 cell(s) kanan
+ABB.E.
+ACD.EF
+ACDPPF
+GGGH.F
+..IHJJ
+LLI.MM
+
+Step 2: Move piece H 1 cell(s) bawah
+ABB.E.
+ACD.EF
+ACDPPF
+GGG..F
+..IHJJ
+LLIHMM
+
+Step 3: Move piece F 1 cell(s) atas
+ABB.EF
+ACD.EF
+ACDPPF
+GGG...
+..IHJJ
+LLIHMM
+
+Step 4: Move piece G 3 cell(s) kanan
+ABB.EF
+ACD.EF
+ACDPPF
+...GGG
+..IHJJ
+LLIHMM
+
+Step 5: Move piece I 1 cell(s) atas
+ABB.EF
+ACD.EF
+ACDPPF
+..IGGG
+..IHJJ
+LL.HMM
+
+Step 6: Move piece L 1 cell(s) kanan
+ABB.EF
+ACD.EF
+ACDPPF
+..IGGG
+..IHJJ
+.LLHMM
+
+Step 7: Move piece A 3 cell(s) bawah
+.BB.EF
+.CD.EF
+.CDPPF
+A.IGGG
+A.IHJJ
+ALLHMM
+
+Step 8: Move piece B 1 cell(s) kiri
+BB..EF
+.CD.EF
+.CDPPF
+A.IGGG
+A.IHJJ
+ALLHMM
+
+Step 9: Move piece C 2 cell(s) bawah
+BB..EF
+..D.EF
+..DPPF
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 10: Move piece D 1 cell(s) atas
+BBD.EF
+..D.EF
+...PPF
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 11: Move piece P 3 cell(s) kiri
+BBD.EF
+..D.EF
+PP...F
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 12: Move piece D 1 cell(s) bawah
+BB..EF
+..D.EF
+PPD..F
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 13: Move piece E 1 cell(s) bawah
+BB...F
+..D.EF
+PPD.EF
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 14: Move piece B 3 cell(s) kanan
+...BBF
+..D.EF
+PPD.EF
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 15: Move piece D 1 cell(s) atas
+..DBBF
+..D.EF
+PP..EF
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 16: Move piece P 2 cell(s) kanan
+..DBBF
+..D.EF
+..PPEF
+ACIGGG
+ACIHJJ
+ALLHMM
+
+Step 17: Move piece A 3 cell(s) atas
+A.DBBF
+A.D.EF
+A.PPEF
+.CIGGG
+.CIHJJ
+.LLHMM
+
+Step 18: Move piece C 3 cell(s) atas
+ACDBBF
+ACD.EF
+A.PPEF
+..IGGG
+..IHJJ
+.LLHMM
+
+Step 19: Move piece L 1 cell(s) kiri
+ACDBBF
+ACD.EF
+A.PPEF
+..IGGG
+..IHJJ
+LL.HMM
+
+Step 20: Move piece I 1 cell(s) bawah
+ACDBBF
+ACD.EF
+A.PPEF
+...GGG
+..IHJJ
+LLIHMM
+
+Step 21: Move piece G 3 cell(s) kiri
+ACDBBF
+ACD.EF
+A.PPEF
+GGG...
+..IHJJ
+LLIHMM
+
+Step 22: Move piece F 1 cell(s) bawah
+ACDBB.
+ACD.EF
+A.PPEF
+GGG..F
+..IHJJ
+LLIHMM
+
+Step 23: Move piece B 1 cell(s) kanan
+ACD.BB
+ACD.EF
+A.PPEF
+GGG..F
+..IHJJ
+LLIHMM
+
+Step 24: Move piece P 1 cell(s) kiri
+ACD.BB
+ACD.EF
+APP.EF
+GGG..F
+..IHJJ
+LLIHMM
+
+Step 25: Move piece H 4 cell(s) atas
+ACDHBB
+ACDHEF
+APP.EF
+GGG..F
+..I.JJ
+LLI.MM
+
+Step 26: Move piece G 2 cell(s) kanan
+ACDHBB
+ACDHEF
+APP.EF
+..GGGF
+..I.JJ
+LLI.MM
+
+Step 27: Move piece P 1 cell(s) kanan
+ACDHBB
+ACDHEF
+A.PPEF
+..GGGF
+..I.JJ
+LLI.MM
+
+Step 28: Move piece C 3 cell(s) bawah
+A.DHBB
+A.DHEF
+A.PPEF
+.CGGGF
+.CI.JJ
+LLI.MM
+
+Step 29: Move piece P 1 cell(s) kiri
+A.DHBB
+A.DHEF
+APP.EF
+.CGGGF
+.CI.JJ
+LLI.MM
+
+Step 30: Move piece H 1 cell(s) bawah
+A.D.BB
+A.DHEF
+APPHEF
+.CGGGF
+.CI.JJ
+LLI.MM
+
+Step 31: Move piece B 1 cell(s) kiri
+A.DBB.
+A.DHEF
+APPHEF
+.CGGGF
+.CI.JJ
+LLI.MM
+
+Step 32: Move piece F 1 cell(s) atas
+A.DBBF
+A.DHEF
+APPHEF
+.CGGG.
+.CI.JJ
+LLI.MM
+
+Step 33: Move piece G 1 cell(s) kanan
+A.DBBF
+A.DHEF
+APPHEF
+.C.GGG
+.CI.JJ
+LLI.MM
+
+Step 34: Move piece I 1 cell(s) atas
+A.DBBF
+A.DHEF
+APPHEF
+.CIGGG
+.CI.JJ
+LL..MM
+
+Step 35: Move piece L 2 cell(s) kanan
+A.DBBF
+A.DHEF
+APPHEF
+.CIGGG
+.CI.JJ
+..LLMM
+
+Step 36: Move piece A 3 cell(s) bawah
+..DBBF
+..DHEF
+.PPHEF
+ACIGGG
+ACI.JJ
+A.LLMM
+
+Step 37: Move piece P 1 cell(s) kiri
+..DBBF
+..DHEF
+PP.HEF
+ACIGGG
+ACI.JJ
+A.LLMM
+
+Step 38: Move piece D 1 cell(s) bawah
+...BBF
+..DHEF
+PPDHEF
+ACIGGG
+ACI.JJ
+A.LLMM
+
+Step 39: Move piece B 3 cell(s) kiri
+BB...F
+..DHEF
+PPDHEF
+ACIGGG
+ACI.JJ
+A.LLMM
+
+Step 40: Move piece J 1 cell(s) kiri
+BB...F
+..DHEF
+PPDHEF
+ACIGGG
+ACIJJ.
+A.LLMM
+
+Step 41: Move piece D 1 cell(s) atas
+BBD..F
+..DHEF
+PP.HEF
+ACIGGG
+ACIJJ.
+A.LLMM
+
+Step 42: Move piece H 1 cell(s) atas
+BBDH.F
+..DHEF
+PP..EF
+ACIGGG
+ACIJJ.
+A.LLMM
+
+Step 43: Move piece P 2 cell(s) kanan
+BBDH.F
+..DHEF
+..PPEF
+ACIGGG
+ACIJJ.
+A.LLMM
+
+Step 44: Move piece E 1 cell(s) atas
+BBDHEF
+..DHEF
+..PP.F
+ACIGGG
+ACIJJ.
+A.LLMM
+
+Step 45: Move piece A 1 cell(s) atas
+BBDHEF
+..DHEF
+A.PP.F
+ACIGGG
+ACIJJ.
+..LLMM
+
+Step 46: Move piece L 2 cell(s) kiri
+BBDHEF
+..DHEF
+A.PP.F
+ACIGGG
+ACIJJ.
+LL..MM
+
+Step 47: Move piece M 1 cell(s) kiri
+BBDHEF
+..DHEF
+A.PP.F
+ACIGGG
+ACIJJ.
+LL.MM.
+
+Step 48: Move piece I 1 cell(s) bawah
+BBDHEF
+..DHEF
+A.PP.F
+AC.GGG
+ACIJJ.
+LLIMM.
+
+Step 49: Move piece G 1 cell(s) kiri
+BBDHEF
+..DHEF
+A.PP.F
+ACGGG.
+ACIJJ.
+LLIMM.
+
+Step 50: Move piece F 3 cell(s) bawah
+BBDHE.
+..DHE.
+A.PP..
+ACGGGF
+ACIJJF
+LLIMMF
+
+Step 51: Move piece P 2 cell(s) kanan
+BBDHE.
+..DHE.
+A...PP
+ACGGGF
+ACIJJF
+LLIMMF
+
