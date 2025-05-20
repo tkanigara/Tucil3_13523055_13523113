@@ -32,7 +32,6 @@ Tucil3_13523055_13523113/
 ├── test/                   # Berisi test cases
 │   ├── input/              # File input puzzle
 │   └── output/             # File output solusi
-├── run.bat                 # Script untuk menjalankan program
 └── README.md
 ```
 
