@@ -1,5 +1,7 @@
 # Tucil 3 Stima: Rush Hour Puzzle Solver
 
+![Author](https://drive.google.com/uc?export=view&id=189Gkd8fKeMKwIaAQMvNTX5NpZsbA-JCL)
+
 **Rush Hour Puzzle Solver** adalah program yang menyelesaikan puzzle Rush Hour dengan menggunakan berbagai algoritma pencarian. Puzzle Rush Hour adalah permainan papan di mana pemain harus memindahkan mobil-mobil pada papan permainan untuk mencapai pintu keluar. Program ini mengimplementasikan beberapa algoritma pencarian untuk menemukan urutan gerakan optimal yang mengarahkan mobil target (biasanya dilambangkan dengan 'P') ke pintu keluar.
 
 ## Fitur
